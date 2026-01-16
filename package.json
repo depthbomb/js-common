@@ -1,0 +1,77 @@
+{
+	"name": "@depthbomb/common",
+	"version": "0.1.0",
+	"description": "A set of common utilities for TypeScript/JavaScript",
+	"license": "MIT",
+	"engines": {
+		"node": ">=22"
+	},
+	"keywords": [
+		"typescript",
+		"utilities"
+	],
+	"exports": {
+		".": {
+			"require": "./dist/index.cjs",
+			"import": "./dist/index.mjs"
+		},
+		"./async": {
+			"require": "./dist/async.cjs",
+			"import": "./dist/async.mjs"
+		},
+		"./decorators": {
+			"require": "./dist/decorators.cjs",
+			"import": "./dist/decorators.mjs"
+		},
+		"./fn": {
+			"require": "./dist/fn.cjs",
+			"import": "./dist/fn.mjs"
+		},
+		"./lazy": {
+			"require": "./dist/lazy.cjs",
+			"import": "./dist/lazy.mjs"
+		},
+		"./queue": {
+			"require": "./dist/queue.cjs",
+			"import": "./dist/queue.mjs"
+		},
+		"./types": {
+			"require": "./dist/types.cjs",
+			"import": "./dist/types.mjs"
+		}
+	},
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.cts",
+	"files": [
+		"dist"
+	],
+	"sideEffects": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/depthbomb/js-common.git"
+	},
+	"bugs": {
+		"url": "https://github.com/depthbomb/js-common/issues"
+	},
+	"scripts": {
+		"build": "tsc",
+		"dist": "tsdown",
+		"release": "yarn dist && release-it",
+		"lint": "eslint ./src --ext .ts"
+	},
+	"devDependencies": {
+		"@types/eslint": "^9.6.1",
+		"@types/node": "^22.19.7",
+		"@typescript-eslint/eslint-plugin": "^8.53.0",
+		"@typescript-eslint/parser": "^8.53.0",
+		"eslint": "^9.39.2",
+		"release-it": "^19.2.3",
+		"tsdown": "^0.20.0-beta.3",
+		"typescript": "^5.9.3"
+	},
+	"packageManager": "yarn@4.12.0"
+}
