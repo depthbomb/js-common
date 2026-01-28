@@ -1,6 +1,6 @@
 {
 	"name": "@depthbomb/common",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"description": "A set of common utilities for TypeScript/JavaScript",
 	"license": "MIT",
 	"engines": {
