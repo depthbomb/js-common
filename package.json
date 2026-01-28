@@ -12,26 +12,32 @@
 	],
 	"exports": {
 		"./async": {
+			"types": "./dist/",
 			"require": "./dist/async.cjs",
 			"import": "./dist/async.mjs"
 		},
 		"./decorators": {
+			"types": "./dist/",
 			"require": "./dist/decorators.cjs",
 			"import": "./dist/decorators.mjs"
 		},
 		"./fn": {
+			"types": "./dist/",
 			"require": "./dist/fn.cjs",
 			"import": "./dist/fn.mjs"
 		},
 		"./lazy": {
+			"types": "./dist/",
 			"require": "./dist/lazy.cjs",
 			"import": "./dist/lazy.mjs"
 		},
 		"./queue": {
+			"types": "./dist/",
 			"require": "./dist/queue.cjs",
 			"import": "./dist/queue.mjs"
 		},
 		"./types": {
+			"types": "./dist/",
 			"require": "./dist/types.cjs",
 			"import": "./dist/types.mjs"
 		}
