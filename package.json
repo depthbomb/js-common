@@ -38,6 +38,10 @@
 		"./types": {
 			"require": "./dist/types.cjs",
 			"import": "./dist/types.mjs"
+		},
+		"./urllib": {
+			"require": "./dist/urllib.cjs",
+			"import": "./dist/urllib.mjs"
 		}
 	},
 	"main": "./dist/index.cjs",

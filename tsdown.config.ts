@@ -9,7 +9,7 @@ export default defineConfig({
 	dts: true,
 	minify: true,
 	skipNodeModulesBundle: true,
-	target: ['chrome100', 'firefox100', 'safari15.4', 'node24'],
+	target: ['chrome142', 'firefox145', 'safari24', 'node24'],
 	exports: {
 		packageJson: false
 	},
