@@ -10,6 +10,8 @@ export default defineConfig({
 	minify: true,
 	skipNodeModulesBundle: true,
 	target: ['chrome100', 'firefox100', 'safari15.4', 'node24'],
-	exports: false,
+	exports: {
+		packageJson: false
+	},
 	tsconfig: './tsconfig.json'
 });
