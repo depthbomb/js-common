@@ -144,6 +144,11 @@ export class URLPath {
 		return new URLPath(url);
 	}
 
+	// eslint-disable-next-line no-undef
+	public async fetch(init?: RequestInit): Promise<Response> {
+		return fetch(this.#url, init);
+	}
+
 	public resolve(relative: string): URLPath {
 		return new URLPath(relative, this);
 	}
