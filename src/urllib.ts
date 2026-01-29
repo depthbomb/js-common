@@ -1,4 +1,15 @@
 export type URLLike = string | URL | URLPath;
+// Taken from the `ufo` package
+export type QueryValue =
+  | string
+  | number
+  | undefined
+  | null
+  | boolean
+  | Array<QueryValue>
+  | Record<string, any>;
+// Taken from the `ufo` package
+export type QueryObject = Record<string, QueryValue | QueryValue[]>;
 
 export class URLPath {
 	readonly #url: URL;
@@ -106,7 +117,7 @@ export class URLPath {
 		return new URLPath(url);
 	}
 
-	public withQuery(params: Record<string, string | number | boolean | null | undefined>): URLPath {
+	public withQuery(params: QueryObject): URLPath {
 		const url = new URL(this.#url.toString());
 
 		for (const [k, v] of Object.entries(params)) {
