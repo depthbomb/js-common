@@ -1,3 +1,5 @@
+import type { Maybe } from './types';
+
 /**
  * Returns a promise after the provided {@link ms} has passed
  * @param ms The number of milliseconds to wait
@@ -41,12 +43,20 @@ export async function pollUntil(condition: () => boolean | Promise<boolean>, int
  * @returns The result of the promise if it resolves before the timeout, otherwise throws an error
  */
 export async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-	return Promise.race([
-		promise,
-		new Promise<never>((_, rej) =>
-			setTimeout(() => rej(new Error('Operation timed out')), ms)
-		),
-	]);
+	let timeoutId: Maybe<ReturnType<typeof setTimeout>>;
+
+	try {
+		return await Promise.race([
+			promise,
+			new Promise<never>((_, rej) => {
+				timeoutId = setTimeout(() => rej(new Error('Operation timed out')), ms);
+			}),
+		]);
+	} finally {
+		if (timeoutId !== undefined) {
+			clearTimeout(timeoutId);
+		}
+	}
 }
 
 /**
