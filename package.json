@@ -12,36 +12,36 @@
 	],
 	"exports": {
 		".": {
-			"require": "./dist/index.cjs",
-			"import": "./dist/index.mjs"
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.cjs"
 		},
 		"./async": {
-			"require": "./dist/async.cjs",
-			"import": "./dist/async.mjs"
+			"import": "./dist/async.mjs",
+			"require": "./dist/async.cjs"
 		},
 		"./decorators": {
-			"require": "./dist/decorators.cjs",
-			"import": "./dist/decorators.mjs"
+			"import": "./dist/decorators.mjs",
+			"require": "./dist/decorators.cjs"
 		},
 		"./fn": {
-			"require": "./dist/fn.cjs",
-			"import": "./dist/fn.mjs"
+			"import": "./dist/fn.mjs",
+			"require": "./dist/fn.cjs"
 		},
 		"./lazy": {
-			"require": "./dist/lazy.cjs",
-			"import": "./dist/lazy.mjs"
+			"import": "./dist/lazy.mjs",
+			"require": "./dist/lazy.cjs"
 		},
 		"./queue": {
-			"require": "./dist/queue.cjs",
-			"import": "./dist/queue.mjs"
+			"import": "./dist/queue.mjs",
+			"require": "./dist/queue.cjs"
 		},
 		"./types": {
-			"require": "./dist/types.cjs",
-			"import": "./dist/types.mjs"
+			"import": "./dist/types.mjs",
+			"require": "./dist/types.cjs"
 		},
 		"./urllib": {
-			"require": "./dist/urllib.cjs",
-			"import": "./dist/urllib.mjs"
+			"import": "./dist/urllib.mjs",
+			"require": "./dist/urllib.cjs"
 		}
 	},
 	"main": "./dist/index.cjs",
@@ -65,7 +65,8 @@
 		"build": "tsc",
 		"dist": "tsdown",
 		"release": "yarn dist && release-it",
-		"lint": "eslint ./src --ext .ts"
+		"lint": "eslint ./src --ext .ts",
+		"test": "vitest"
 	},
 	"devDependencies": {
 		"@types/eslint": "^9.6.1",
@@ -75,7 +76,8 @@
 		"eslint": "^10.0.0",
 		"release-it": "^19.2.4",
 		"tsdown": "^0.20.3",
-		"typescript": "^5.9.3"
+		"typescript": "^5.9.3",
+		"vitest": "^4.0.18"
 	},
 	"packageManager": "yarn@4.12.0"
 }

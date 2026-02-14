@@ -1,3 +1,5 @@
+import type { Maybe } from './types';
+
 export class Queue<T> {
 	private items: T[] = [];
 	private head = 0;
@@ -36,7 +38,7 @@ export class Queue<T> {
 	 *
 	 * @returns The item at the front of the queue, or undefined if the queue is empty
 	 */
-	public dequeue(): T | undefined {
+	public dequeue(): Maybe<T> {
 		if (this.head >= this.items.length) {
 			return undefined;
 		}
@@ -55,7 +57,7 @@ export class Queue<T> {
 	 *
 	 * @returns The item at the front of the queue without removing it, or undefined if the queue is empty
 	 */
-	public peek(): T | undefined {
+	public peek(): Maybe<T> {
 		return this.items[this.head];
 	}
 

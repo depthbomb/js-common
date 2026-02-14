@@ -1,4 +1,7 @@
 const CACHE_SWEEP_INTERVAL = 64;
+const FUNCTION_HASH_IDS    = new WeakMap<Function, number>();
+
+let functionHashCounter = 0;
 
 function hashArgs(args: any[]): string {
 	const seen = new WeakMap<object, number>();
@@ -20,13 +23,14 @@ function hashArgs(args: any[]): string {
 		}
 
 		if (type === 'function') {
-			if (seen.has(value)) {
-				return { fnRef: seen.get(value) };
+			let fnId = FUNCTION_HASH_IDS.get(value);
+			if (fnId === undefined) {
+				fnId = functionHashCounter++;
+				FUNCTION_HASH_IDS.set(value, fnId);
 			}
 
-			seen.set(value, counter++);
 			return {
-				fn: seen.get(value),
+				fn: fnId,
 				name: value.name || 'anon',
 			};
 		}
