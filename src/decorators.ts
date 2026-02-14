@@ -1,3 +1,5 @@
+const CACHE_SWEEP_INTERVAL = 64;
+
 function hashArgs(args: any[]): string {
 	const seen = new WeakMap<object, number>();
 	let counter = 0;
@@ -84,31 +86,49 @@ export function cache(ttlMs: number) {
 		method: (this: T, ...args: Args) => R,
 		_ctx: ClassMethodDecoratorContext<T, (this: T, ...args: Args) => R>
 	) {
-		const instanceCache = new WeakMap<object, Map<string, { value: R; expiry: number }>>();
+		const instanceCache = new WeakMap<object, {
+			entries: Map<string, { value: R; expiry: number }>;
+			calls: number;
+		}>();
 
 		return function (this: T, ...args: Args): R {
 			const now = Date.now();
 
-			let methodCache = instanceCache.get(this);
-			if (!methodCache) {
-				methodCache = new Map();
-				instanceCache.set(this, methodCache);
+			let methodCacheState = instanceCache.get(this);
+			if (!methodCacheState) {
+				methodCacheState = {
+					entries: new Map(),
+					calls: 0,
+				};
+				instanceCache.set(this, methodCacheState);
+			}
+
+			methodCacheState.calls++;
+			if (methodCacheState.calls % CACHE_SWEEP_INTERVAL === 0 && methodCacheState.entries.size > 0) {
+				for (const [cacheKey, cacheEntry] of methodCacheState.entries) {
+					if (cacheEntry.expiry <= now) {
+						methodCacheState.entries.delete(cacheKey);
+					}
+				}
 			}
 
 			const key   = hashArgs(args);
-			const entry = methodCache.get(key);
+			const entry = methodCacheState.entries.get(key);
 			if (entry && entry.expiry > now) {
 				return entry.value;
+			}
+			if (entry) {
+				methodCacheState.entries.delete(key);
 			}
 
 			const result = method.apply(this, args);
 			if (result instanceof Promise) {
 				const wrapped = result.catch((error) => {
-					methodCache.delete(key);
+					methodCacheState.entries.delete(key);
 					throw error;
 				}) as R;
 
-				methodCache.set(key, {
+				methodCacheState.entries.set(key, {
 					value: wrapped,
 					expiry: now + ttlMs,
 				});
@@ -116,7 +136,7 @@ export function cache(ttlMs: number) {
 				return wrapped;
 			}
 
-			methodCache.set(key, {
+			methodCacheState.entries.set(key, {
 				value: result,
 				expiry: now + ttlMs,
 			});
