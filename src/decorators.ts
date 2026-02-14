@@ -68,13 +68,13 @@ function hashArgs(args: any[]): string {
  * @param ttlMs How long the cached value should be returned after its last call in milliseconds.
  */
 export function cache(ttlMs: number) {
-	return function <T extends object>(
-		method: (this: T, ...args: any[]) => any,
-		_ctx: ClassMethodDecoratorContext<T>
+	return function <T extends object, Args extends any[], R>(
+		method: (this: T, ...args: Args) => R,
+		_ctx: ClassMethodDecoratorContext<T, (this: T, ...args: Args) => R>
 	) {
-		const instanceCache = new WeakMap<object, Map<string, { value: any; expiry: number }>>();
+		const instanceCache = new WeakMap<object, Map<string, { value: R; expiry: number }>>();
 
-		return async function (this: T, ...args: any[]) {
+		return function (this: T, ...args: Args): R {
 			const now = Date.now();
 
 			let methodCache = instanceCache.get(this);
@@ -89,15 +89,27 @@ export function cache(ttlMs: number) {
 				return entry.value;
 			}
 
-			const result   = method.apply(this, args);
-			const resolved = result instanceof Promise ? await result : result;
+			const result = method.apply(this, args);
+			if (result instanceof Promise) {
+				const wrapped = result.catch((error) => {
+					methodCache.delete(key);
+					throw error;
+				}) as R;
+
+				methodCache.set(key, {
+					value: wrapped,
+					expiry: now + ttlMs,
+				});
+
+				return wrapped;
+			}
 
 			methodCache.set(key, {
-				value: resolved,
+				value: result,
 				expiry: now + ttlMs,
 			});
 
-			return resolved;
+			return result;
 		};
 	};
 }
