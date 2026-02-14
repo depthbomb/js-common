@@ -11,6 +11,32 @@ export type QueryValue =
 // Taken from the `ufo` package
 export type QueryObject = Record<string, QueryValue | QueryValue[]>;
 
+function appendQueryValue(searchParams: URLSearchParams, key: string, value: QueryValue | QueryValue[]) {
+	if (value === null || value === undefined) {
+		return;
+	}
+
+	if (Array.isArray(value)) {
+		for (const item of value) {
+			appendQueryValue(searchParams, key, item);
+		}
+
+		return;
+	}
+
+	if (typeof value === 'object') {
+		try {
+			searchParams.append(key, JSON.stringify(value));
+		} catch {
+			searchParams.append(key, String(value));
+		}
+
+		return;
+	}
+
+	searchParams.append(key, String(value));
+}
+
 export class URLPath {
 	readonly #url: URL;
 
@@ -121,11 +147,8 @@ export class URLPath {
 		const url = new URL(this.#url.toString());
 
 		for (const [k, v] of Object.entries(params)) {
-			if (v === null || v === undefined) {
-				url.searchParams.delete(k);
-			} else {
-				url.searchParams.set(k, String(v));
-			}
+			url.searchParams.delete(k);
+			appendQueryValue(url.searchParams, k, v);
 		}
 
 		return new URLPath(url);
