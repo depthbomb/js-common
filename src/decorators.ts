@@ -13,8 +13,20 @@ function hashArgs(args: any[]): string {
 			return 'undefined';
 		}
 
+		if (type === 'bigint') {
+			return `bigint:${value.toString()}`;
+		}
+
 		if (type === 'function') {
-			return `function:${value.name || 'anon'}`;
+			if (seen.has(value)) {
+				return { fnRef: seen.get(value) };
+			}
+
+			seen.set(value, counter++);
+			return {
+				fn: seen.get(value),
+				name: value.name || 'anon',
+			};
 		}
 
 		if (value instanceof Date) {
