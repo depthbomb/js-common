@@ -46,5 +46,5 @@
 		// Completeness
 		"skipLibCheck": true
 	},
-	"include": ["src/**/*.ts", "test/timing.test.ts", "test/decorators.test.ts", "test/state-flag.test.ts", "test/functional.test.ts", "test/index.test.ts", "test/lazy.test.ts", "test/collections.test.ts", "test/state-resettable-value.test.ts", "test/typing.test.ts", "test/url.test.ts", "test/commonjs-dist.test.ts"]
+	"include": ["src/**/*.ts", "test/timing.test.ts", "test/promise.test.ts", "test/decorators.test.ts", "test/state-flag.test.ts", "test/functional.test.ts", "test/index.test.ts", "test/lazy.test.ts", "test/collections.test.ts", "test/state-resettable-value.test.ts", "test/typing.test.ts", "test/url.test.ts", "test/commonjs-dist.test.ts"]
 }

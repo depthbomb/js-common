@@ -1,6 +1,16 @@
-import { afterEach, it, expect, describe, vi } from 'vitest';
+import { it, vi, expect, describe, afterEach } from 'vitest';
 import { sequential, allSettledSuccessful } from '../dist/promise.mjs';
-import { timeout, pollUntil, withTimeout, rejectionTimeout, retry } from '../dist/timing.mjs';
+import {
+	retry,
+	timeout,
+	pollUntil,
+	withAbort,
+	abortAfter,
+	raceSignals,
+	RetryJitter,
+	withTimeout,
+	rejectionTimeout
+} from '../dist/timing.mjs';
 
 describe('async utilities', () => {
 	it('timeout resolves asynchronously', async () => {
@@ -139,7 +149,7 @@ describe('retry', () => {
 				throw new Error('first');
 			}
 			return 42;
-		}, { attempts: 2, baseMs: 100, jitter: 'full' });
+		}, { attempts: 2, baseMs: 100, jitter: RetryJitter.Full });
 
 		await vi.advanceTimersByTimeAsync(49);
 		expect(attempts).toBe(1);
@@ -153,5 +163,47 @@ describe('retry', () => {
 		controller.abort();
 
 		await expect(retry(() => Promise.resolve('ok'), { signal: controller.signal })).rejects.toThrow('Aborted');
+	});
+});
+
+describe('cancellation helpers', () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it('abortAfter aborts after the provided timeout', async () => {
+		vi.useFakeTimers();
+		const signal = abortAfter(10);
+
+		expect(signal.aborted).toBe(false);
+		await vi.advanceTimersByTimeAsync(10);
+		expect(signal.aborted).toBe(true);
+	});
+
+	it('withAbort rejects when signal aborts first', async () => {
+		vi.useFakeTimers();
+		const controller = new AbortController();
+		const never = new Promise<number>(() => {});
+		const result = withAbort(never, controller.signal);
+		const assertion = expect(result).rejects.toThrow('Aborted');
+
+		controller.abort();
+		await vi.runAllTimersAsync();
+		await assertion;
+	});
+
+	it('withAbort resolves source value when source wins', async () => {
+		const controller = new AbortController();
+		await expect(withAbort(Promise.resolve(7), controller.signal)).resolves.toBe(7);
+	});
+
+	it('raceSignals aborts when any signal aborts', () => {
+		const a = new AbortController();
+		const b = new AbortController();
+		const raced = raceSignals(a.signal, b.signal);
+
+		expect(raced.aborted).toBe(false);
+		b.abort();
+		expect(raced.aborted).toBe(true);
 	});
 });

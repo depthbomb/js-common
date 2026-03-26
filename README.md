@@ -19,6 +19,9 @@ import {
 	pollUntil,
 	withTimeout,
 	retry,
+	abortAfter,
+	withAbort,
+	raceSignals,
 } from '@depthbomb/common/timing';
 
 await timeout(250);
@@ -45,14 +48,21 @@ const data = await retry(
 		jitter: 'full',
 	}
 );
+
+const signal = abortAfter(1_000);
+await withAbort(fetch('https://example.com/slow'), signal);
+
+const parent = new AbortController();
+const child = abortAfter(500);
+const combined = raceSignals(parent.signal, child);
 ```
 
 ### `promise`
 
-Promise composition helpers.
+Promise composition helpers, including detailed settled results and concurrency-limited execution.
 
 ```ts
-import { allSettledSuccessful, sequential } from '@depthbomb/common/promise';
+import { allSettledSuccessful, allSettledDetailed, sequential, pool, pMap } from '@depthbomb/common/promise';
 
 const successful = await allSettledSuccessful([
 	Promise.resolve(1),
@@ -64,6 +74,19 @@ const ordered = await sequential([
 	async () => 'first',
 	async () => 'second'
 ]); // ['first', 'second']
+
+const detailed = await allSettledDetailed([
+	Promise.resolve('ok'),
+	Promise.reject(new Error('x')),
+]); // { results, fulfilled: ['ok'], rejected: [Error('x')] }
+
+const pooled = await pool([
+	async () => 1,
+	async () => 2,
+	async () => 3,
+], { concurrency: 2 });
+
+const mapped = await pMap([1, 2, 3], async (v) => v * 10, { concurrency: 2 });
 ```
 
 ### `decorators`

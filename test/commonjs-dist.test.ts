@@ -25,6 +25,8 @@ describe('dist commonjs builds', () => {
 		expect(root).toBeTypeOf('object');
 		expect(root.timeout).toBeTypeOf('function');
 		expect(root.retry).toBeTypeOf('function');
+		expect(root.withAbort).toBeTypeOf('function');
+		expect(root.pMap).toBeTypeOf('function');
 		expect(root.Queue).toBeTypeOf('function');
 		expect(root.URLPath).toBeTypeOf('function');
 	});

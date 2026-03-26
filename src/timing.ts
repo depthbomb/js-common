@@ -1,4 +1,19 @@
-import type { Awaitable, Maybe } from './typing';
+import type { Maybe, Awaitable } from './typing';
+
+export interface IRetryOptions {
+	attempts?: number;
+	baseMs?: number;
+	maxMs?: number;
+	jitter?: RetryJitter;
+	signal?: AbortSignal;
+	shouldRetry?: (error: unknown, attempt: number) => Awaitable<boolean>;
+}
+
+export const enum RetryJitter {
+	None,
+	Full,
+	Equal
+}
 
 /**
  * Returns a promise after the provided {@link ms} has passed
@@ -59,20 +74,16 @@ export async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T
 	}
 }
 
-export type RetryJitter = 'none' | 'full' | 'equal';
+function toAbortError() {
+	const error = new Error('Aborted');
+	error.name = 'AbortError';
 
-export interface RetryOptions {
-	attempts?: number;
-	baseMs?: number;
-	maxMs?: number;
-	jitter?: RetryJitter;
-	signal?: AbortSignal;
-	shouldRetry?: (error: unknown, attempt: number) => Awaitable<boolean>;
+	return error;
 }
 
 function throwIfAborted(signal?: AbortSignal) {
 	if (signal?.aborted) {
-		throw new Error('Aborted');
+		throw toAbortError();
 	}
 }
 
@@ -93,7 +104,7 @@ async function waitFor(ms: number, signal?: AbortSignal) {
 		function onAbort() {
 			clearTimeout(timeoutId);
 			signal?.removeEventListener('abort', onAbort);
-			reject(new Error('Aborted'));
+			reject(toAbortError());
 		}
 
 		if (signal) {
@@ -102,12 +113,100 @@ async function waitFor(ms: number, signal?: AbortSignal) {
 	});
 }
 
+/**
+ * Returns an AbortSignal that aborts automatically after the given number of milliseconds.
+ *
+ * @param ms Delay before automatic abort.
+ */
+export function abortAfter(ms: number): AbortSignal {
+	if (!Number.isFinite(ms) || ms < 0) {
+		throw new Error('ms must be a finite number >= 0');
+	}
+
+	const controller = new AbortController();
+	const timeoutId  = setTimeout(() => controller.abort(), ms);
+
+	controller.signal.addEventListener('abort', () => clearTimeout(timeoutId), { once: true });
+
+	return controller.signal;
+}
+
+/**
+ * Returns a signal that aborts when any of the input signals aborts.
+ *
+ * @param signals Input abort signals.
+ */
+export function raceSignals(...signals: Array<AbortSignal | undefined>): AbortSignal {
+	const validSignals = signals.filter((signal): signal is AbortSignal => signal !== undefined);
+	const controller = new AbortController();
+	const listeners = new Map<AbortSignal, () => void>();
+
+	const abort = () => {
+		if (controller.signal.aborted) {
+			return;
+		}
+
+		controller.abort();
+
+		for (const [signal, handler] of listeners) {
+			signal.removeEventListener('abort', handler);
+		}
+
+		listeners.clear();
+	};
+
+	for (const signal of validSignals) {
+		if (signal.aborted) {
+			abort();
+			break;
+		}
+
+		const handler = () => abort();
+
+		listeners.set(signal, handler);
+
+		signal.addEventListener('abort', handler, { once: true });
+	}
+
+	return controller.signal;
+}
+
+/**
+ * Wraps a promise and rejects when the signal aborts before completion.
+ *
+ * @param promise Promise or value to await.
+ * @param signal Abort signal to monitor.
+ */
+export async function withAbort<T>(promise: Awaitable<T>, signal: AbortSignal): Promise<T> {
+	throwIfAborted(signal);
+
+	return await new Promise<T>((resolve, reject) => {
+		function onAbort() {
+			signal.removeEventListener('abort', onAbort);
+			reject(toAbortError());
+		}
+
+		signal.addEventListener('abort', onAbort, { once: true });
+
+		Promise.resolve(promise).then(
+			(value) => {
+				signal.removeEventListener('abort', onAbort);
+				resolve(value);
+			},
+			(error) => {
+				signal.removeEventListener('abort', onAbort);
+				reject(error);
+			}
+		);
+	});
+}
+
 function getJitteredDelay(delayMs: number, jitter: RetryJitter): number {
-	if (jitter === 'none') {
+	if (jitter === RetryJitter.None) {
 		return delayMs;
 	}
 
-	if (jitter === 'full') {
+	if (jitter === RetryJitter.Full) {
 		return Math.floor(Math.random() * delayMs);
 	}
 
@@ -120,11 +219,11 @@ function getJitteredDelay(delayMs: number, jitter: RetryJitter): number {
  * @param fn Operation to run for each attempt.
  * @param options Retry options controlling attempts, backoff, jitter, and cancellation.
  */
-export async function retry<T>(fn: (attempt: number) => Awaitable<T>, options: RetryOptions = {}): Promise<T> {
+export async function retry<T>(fn: (attempt: number) => Awaitable<T>, options: IRetryOptions = {}): Promise<T> {
 	const attempts = options.attempts ?? 3;
-	const baseMs = options.baseMs ?? 100;
-	const maxMs = options.maxMs ?? Number.POSITIVE_INFINITY;
-	const jitter = options.jitter ?? 'none';
+	const baseMs   = options.baseMs   ?? 100;
+	const maxMs    = options.maxMs    ?? Number.POSITIVE_INFINITY;
+	const jitter   = options.jitter   ?? RetryJitter.None;
 
 	if (!Number.isInteger(attempts) || attempts < 1) {
 		throw new Error('attempts must be an integer >= 1');
@@ -154,7 +253,8 @@ export async function retry<T>(fn: (attempt: number) => Awaitable<T>, options: R
 			}
 
 			const exponentialDelay = Math.min(baseMs * 2 ** (attempt - 1), maxMs);
-			const delay = getJitteredDelay(exponentialDelay, jitter);
+			const delay            = getJitteredDelay(exponentialDelay, jitter);
+
 			await waitFor(delay, options.signal);
 		}
 	}
