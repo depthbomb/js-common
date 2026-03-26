@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest';
-import { ResettableValue } from '../dist/resettable-value.mjs';
+import { ResettableValue } from '../dist/state.mjs';
 
 describe('ResettableValue', () => {
 	it('sets and resets to the original constructor value', () => {

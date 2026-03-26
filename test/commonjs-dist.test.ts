@@ -29,11 +29,13 @@ describe('dist commonjs builds', () => {
 	});
 
 	it('runs a basic behavior check on cjs utilities', async () => {
-		const { timeout, allSettledSuccessful } = require('../dist/async.cjs') as {
+		const { timeout } = require('../dist/timing.cjs') as {
 			timeout: (ms: number) => Promise<void>;
+		};
+		const { allSettledSuccessful } = require('../dist/promise.cjs') as {
 			allSettledSuccessful: <T>(promises: Promise<T>[]) => Promise<T[]>;
 		};
-		const { Queue } = require('../dist/queue.cjs') as {
+		const { Queue } = require('../dist/collections.cjs') as {
 			Queue: new <T>(iterable?: Iterable<T>) => {
 				enqueue(value: T): void;
 				dequeue(): T | undefined;

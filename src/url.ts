@@ -1,13 +1,13 @@
 export type URLLike = string | URL | URLPath;
 // Taken from the `ufo` package
 export type QueryValue =
-			| string
-			| number
-			| undefined
-			| null
-			| boolean
-			| Array<QueryValue>
-			| Record<string, any>;
+	| string
+	| number
+	| undefined
+	| null
+	| boolean
+	| Array<QueryValue>
+	| Record<string, any>;
 // Taken from the `ufo` package
 export type QueryObject = Record<string, QueryValue | QueryValue[]>;
 
@@ -109,14 +109,14 @@ export class URLPath {
 
 	public get suffix(): string {
 		const name = this.name;
-		const i    = name.lastIndexOf('.');
+		const i = name.lastIndexOf('.');
 
 		return i >= 0 ? name.slice(i) : '';
 	}
 
 	public get stem(): string {
 		const name = this.name;
-		const i    = name.lastIndexOf('.');
+		const i = name.lastIndexOf('.');
 
 		return i >= 0 ? name.slice(0, i) : name;
 	}

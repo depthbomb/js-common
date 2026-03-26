@@ -1,4 +1,4 @@
-import { Flag } from '../dist/flag.mjs';
+import { Flag } from '../dist/state.mjs';
 import { it, expect, describe } from 'vitest';
 
 describe('Flag', () => {

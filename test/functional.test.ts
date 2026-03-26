@@ -1,5 +1,5 @@
-import { once } from '../dist/fn.mjs';
 import { it, expect, describe } from 'vitest';
+import { once } from '../dist/functional.mjs';
 
 describe('once', () => {
 	it('invokes the wrapped function only once', () => {

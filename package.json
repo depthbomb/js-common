@@ -15,41 +15,41 @@
 			"import": "./dist/index.mjs",
 			"require": "./dist/index.cjs"
 		},
-		"./async": {
-			"import": "./dist/async.mjs",
-			"require": "./dist/async.cjs"
+		"./collections": {
+			"import": "./dist/collections.mjs",
+			"require": "./dist/collections.cjs"
 		},
 		"./decorators": {
 			"import": "./dist/decorators.mjs",
 			"require": "./dist/decorators.cjs"
 		},
-		"./flag": {
-			"import": "./dist/flag.mjs",
-			"require": "./dist/flag.cjs"
-		},
-		"./fn": {
-			"import": "./dist/fn.mjs",
-			"require": "./dist/fn.cjs"
+		"./functional": {
+			"import": "./dist/functional.mjs",
+			"require": "./dist/functional.cjs"
 		},
 		"./lazy": {
 			"import": "./dist/lazy.mjs",
 			"require": "./dist/lazy.cjs"
 		},
-		"./queue": {
-			"import": "./dist/queue.mjs",
-			"require": "./dist/queue.cjs"
+		"./promise": {
+			"import": "./dist/promise.mjs",
+			"require": "./dist/promise.cjs"
 		},
-		"./resettable-value": {
-			"import": "./dist/resettable-value.mjs",
-			"require": "./dist/resettable-value.cjs"
+		"./state": {
+			"import": "./dist/state.mjs",
+			"require": "./dist/state.cjs"
 		},
-		"./types": {
-			"import": "./dist/types.mjs",
-			"require": "./dist/types.cjs"
+		"./timing": {
+			"import": "./dist/timing.mjs",
+			"require": "./dist/timing.cjs"
 		},
-		"./urllib": {
-			"import": "./dist/urllib.mjs",
-			"require": "./dist/urllib.cjs"
+		"./typing": {
+			"import": "./dist/typing.mjs",
+			"require": "./dist/typing.cjs"
+		},
+		"./url": {
+			"import": "./dist/url.mjs",
+			"require": "./dist/url.cjs"
 		}
 	},
 	"main": "./dist/index.cjs",

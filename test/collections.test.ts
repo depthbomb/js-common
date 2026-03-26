@@ -1,5 +1,5 @@
-import { Queue } from '../dist/queue.mjs';
 import { it, expect, describe } from 'vitest';
+import { Queue } from '../dist/collections.mjs';
 
 describe('Queue', () => {
 	it('supports enqueue, dequeue, peek, size, and isEmpty', () => {

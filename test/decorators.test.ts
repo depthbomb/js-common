@@ -1,4 +1,4 @@
-import { timeout } from '../dist/async.mjs';
+import { timeout } from '../dist/timing.mjs';
 import { it, expect, describe } from 'vitest';
 import { cache } from '../dist/decorators.mjs';
 

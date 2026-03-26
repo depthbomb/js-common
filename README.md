@@ -8,9 +8,9 @@ A set of common utilities for TypeScript/JavaScript that I use in my projects.
 
 ## Modules
 
-### `async`
+### `timing`
 
-Async helpers for common flow-control patterns, including delay utilities, polling, timeout wrapping, settled-result filtering, and sequential task execution.
+Timing and timeout flow-control helpers.
 
 ```ts
 import {
@@ -18,9 +18,7 @@ import {
 	rejectionTimeout,
 	pollUntil,
 	withTimeout,
-	allSettledSuccessful,
-	sequential
-} from '@depthbomb/common/async';
+} from '@depthbomb/common/timing';
 
 await timeout(250);
 await rejectionTimeout(100).catch(() => {});
@@ -30,6 +28,14 @@ setTimeout(() => { ready = true; }, 200);
 await pollUntil(() => ready, 50, 1_000);
 
 const value = await withTimeout(Promise.resolve('ok'), 500);
+```
+
+### `promise`
+
+Promise composition helpers.
+
+```ts
+import { allSettledSuccessful, sequential } from '@depthbomb/common/promise';
 
 const successful = await allSettledSuccessful([
 	Promise.resolve(1),
@@ -65,25 +71,34 @@ s.getUser('1');
 s.getUser('1'); // cached for 1 second
 ```
 
-### `flag`
+### `state`
 
-A small resettable boolean utility built on `ResettableValue`, with convenience helpers like `isTrue`, `isFalse`, `setTrue`, `setFalse`, and `toggle`.
+State primitives: `ResettableValue`, `Flag`, and `resettableLazy`.
 
 ```ts
-import { Flag } from '@depthbomb/common/flag';
+import { Flag, ResettableValue, resettableLazy } from '@depthbomb/common/state';
 
 const flag = new Flag();
 flag.setTrue();
 flag.toggle();
 flag.reset();
+
+const retries = new ResettableValue(3);
+retries.set(1);
+retries.reset(); // back to 3
+
+const counter = resettableLazy(() => Math.random());
+const first = counter.get();
+counter.reset();
+const second = counter.get(); // recomputed
 ```
 
-### `fn`
+### `functional`
 
 General function utilities. Currently includes `once`, which ensures a function runs only on its first invocation and then reuses the same result.
 
 ```ts
-import { once } from '@depthbomb/common/fn';
+import { once } from '@depthbomb/common/functional';
 
 const init = once(() => ({ startedAt: Date.now() }));
 
@@ -94,29 +109,24 @@ console.log(a === b); // true
 
 ### `lazy`
 
-Lazy initialization utilities for sync and async values, plus a resettable variant for explicit cache invalidation.
+Lazy initialization utilities for sync and async values.
 
 ```ts
-import { lazy, lazyAsync, resettableLazy } from '@depthbomb/common/lazy';
+import { lazy, lazyAsync } from '@depthbomb/common/lazy';
 
 const getConfig = lazy(() => ({ env: 'prod' }));
 const config = getConfig(); // factory runs once
 
 const getToken = lazyAsync(async () => 'token');
 const token = await getToken(); // promise created once
-
-const counter = resettableLazy(() => Math.random());
-const first = counter.get();
-counter.reset();
-const second = counter.get(); // recomputed
 ```
 
-### `queue`
+### `collections`
 
 A lightweight generic FIFO queue with `enqueue`, `dequeue`, `peek`, iteration support, and internal compaction to keep long-running usage efficient.
 
 ```ts
-import { Queue } from '@depthbomb/common/queue';
+import { Queue } from '@depthbomb/common/collections';
 
 const q = new Queue<number>([1, 2]);
 q.enqueue(3);
@@ -126,24 +136,12 @@ console.log(q.dequeue()); // 1
 console.log(q.toArray()); // [2, 3]
 ```
 
-### `resettable-value`
-
-A generic mutable value holder that tracks its initial value so it can be restored with `reset`.
-
-```ts
-import { ResettableValue } from '@depthbomb/common/resettable-value';
-
-const retries = new ResettableValue(3);
-retries.set(1);
-retries.reset(); // back to 3
-```
-
-### `types`
+### `typing`
 
 Shared type aliases and type-oriented helpers such as `Awaitable`, `Maybe`, `Nullable`, `cast`, `assume`, and `typedEntries`.
 
 ```ts
-import { cast, assume, typedEntries, type Awaitable, type Maybe } from '@depthbomb/common/types';
+import { cast, assume, typedEntries, type Awaitable, type Maybe } from '@depthbomb/common/typing';
 
 const v = cast<object, { id: string }>({ id: 'a' });
 
@@ -156,12 +154,12 @@ const maybeName: Maybe<string> = undefined;
 const task: Awaitable<number> = Promise.resolve(1);
 ```
 
-### `urllib`
+### `url`
 
 URL-focused utilities centered around `URLPath`, an ergonomic wrapper for URL parsing, path composition, query/hash manipulation, and request dispatch via `fetch`.
 
 ```ts
-import { URLPath } from '@depthbomb/common/urllib';
+import { URLPath } from '@depthbomb/common/url';
 
 const api = new URLPath('https://example.com/api');
 const usersUrl = api

@@ -1,4 +1,4 @@
-import type { Maybe } from './types';
+import type { Maybe } from './typing';
 
 export function lazy<T>(factory: () => T): () => T {
 	let cached: Maybe<T>;
@@ -24,24 +24,4 @@ export function lazyAsync<T>(factory: () => Promise<T>): () => Promise<T> {
 
 		return promise;
 	};
-}
-
-export function resettableLazy<T>(factory: () => T) {
-	let cached: Maybe<T>;
-	let initialized = false;
-
-	function get(): T {
-		if (!initialized) {
-			cached = factory();
-			initialized = true;
-		}
-		return cached!;
-	}
-
-	function reset() {
-		initialized = false;
-		cached = undefined;
-	}
-
-	return { get, reset };
 }

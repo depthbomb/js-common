@@ -1,4 +1,4 @@
-import type { Maybe } from './types';
+import type { Maybe } from './typing';
 
 export class Queue<T> {
 	#items = [] as T[];
@@ -46,7 +46,7 @@ export class Queue<T> {
 		const item = this.#items[this.#head++];
 		if (this.#head >= 64 && this.#head * 2 >= this.#items.length) {
 			this.#items = this.#items.slice(this.#head);
-			this.#head  = 0;
+			this.#head = 0;
 		}
 
 		return item;
@@ -66,7 +66,7 @@ export class Queue<T> {
 	 */
 	public clear(): void {
 		this.#items = [];
-		this.#head  = 0;
+		this.#head = 0;
 	}
 
 	/**

@@ -1,5 +1,6 @@
 import { it, expect, describe } from 'vitest';
-import { timeout, pollUntil, sequential, withTimeout, rejectionTimeout, allSettledSuccessful } from '../dist/async.mjs';
+import { sequential, allSettledSuccessful } from '../dist/promise.mjs';
+import { timeout, pollUntil, withTimeout, rejectionTimeout } from '../dist/timing.mjs';
 
 describe('async utilities', () => {
 	it('timeout resolves asynchronously', async () => {
