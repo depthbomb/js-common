@@ -1,4 +1,4 @@
-import type { Maybe } from './types';
+import type { Maybe, Awaitable } from './types';
 
 /**
  * Returns a promise after the provided {@link ms} has passed
@@ -23,7 +23,7 @@ export function rejectionTimeout(ms: number) {
  * @param interval The interval in milliseconds to wait between checks
  * @param timeoutMs The maximum time in milliseconds to wait before throwing an error
  */
-export async function pollUntil(condition: () => boolean | Promise<boolean>, interval = 100, timeoutMs = 5_000) {
+export async function pollUntil(condition: () => Awaitable<boolean>, interval = 100, timeoutMs = 5_000) {
 	const start = Date.now();
 	while (!(await condition())) {
 		if (Date.now() - start > timeoutMs) {
@@ -65,8 +65,8 @@ export async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T
  * @param promises An array of promises to wait for
  * @returns A promise that resolves to an array of successful results
  */
-export async function allSettledSuccessful<T>(promises: Promise<T>[]): Promise<T[]> {
-	const results: PromiseSettledResult<T>[] = await Promise.allSettled(promises);
+export async function allSettledSuccessful<T>(promises: Array<Promise<T>>): Promise<T[]> {
+	const results = await Promise.allSettled(promises) as Array<PromiseSettledResult<T>>;
 	return results
 		.filter((r): r is PromiseFulfilledResult<T> => r.status === 'fulfilled')
 		.map((r) => r.value);
@@ -78,8 +78,8 @@ export async function allSettledSuccessful<T>(promises: Promise<T>[]): Promise<T
  * @param tasks An array of functions that return promises
  * @returns A promise that resolves to an array of results from the input tasks
  */
-export async function sequential<T>(tasks: (() => Promise<T>)[]): Promise<T[]> {
-	const results: T[] = [];
+export async function sequential<T>(tasks: Array<() => Promise<T>>): Promise<T[]> {
+	const results = [] as T[];
 	for (const task of tasks) {
 		results.push(await task());
 	}

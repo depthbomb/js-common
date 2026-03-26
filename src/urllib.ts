@@ -1,13 +1,13 @@
 export type URLLike = string | URL | URLPath;
 // Taken from the `ufo` package
 export type QueryValue =
-  | string
-  | number
-  | undefined
-  | null
-  | boolean
-  | Array<QueryValue>
-  | Record<string, any>;
+			| string
+			| number
+			| undefined
+			| null
+			| boolean
+			| Array<QueryValue>
+			| Record<string, any>;
 // Taken from the `ufo` package
 export type QueryObject = Record<string, QueryValue | QueryValue[]>;
 

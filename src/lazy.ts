@@ -1,5 +1,7 @@
+import type { Maybe } from './types';
+
 export function lazy<T>(factory: () => T): () => T {
-	let cached: T | undefined;
+	let cached: Maybe<T>;
 	let initialized = false;
 
 	return () => {
@@ -13,7 +15,7 @@ export function lazy<T>(factory: () => T): () => T {
 }
 
 export function lazyAsync<T>(factory: () => Promise<T>): () => Promise<T> {
-	let promise: Promise<T> | undefined;
+	let promise: Maybe<Promise<T>>;
 
 	return () => {
 		if (!promise) {
@@ -25,7 +27,7 @@ export function lazyAsync<T>(factory: () => Promise<T>): () => Promise<T> {
 }
 
 export function resettableLazy<T>(factory: () => T) {
-	let cached: T | undefined;
+	let cached: Maybe<T>;
 	let initialized = false;
 
 	function get(): T {
