@@ -1,4 +1,4 @@
-import { once } from '../src/fn';
+import { once } from '../dist/fn.mjs';
 import { it, expect, describe } from 'vitest';
 
 describe('once', () => {

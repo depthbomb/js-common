@@ -1,6 +1,6 @@
-import { timeout } from '../src/async';
-import { cache } from '../src/decorators';
+import { timeout } from '../dist/async.mjs';
 import { it, expect, describe } from 'vitest';
+import { cache } from '../dist/decorators.mjs';
 
 function decorate<T extends object, A extends any[], R>(
 	method: (this: T, ...args: A) => R,

@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest';
-import { timeout, pollUntil, sequential, withTimeout, rejectionTimeout, allSettledSuccessful } from '../src/async';
+import { timeout, pollUntil, sequential, withTimeout, rejectionTimeout, allSettledSuccessful } from '../dist/async.mjs';
 
 describe('async utilities', () => {
 	it('timeout resolves asynchronously', async () => {

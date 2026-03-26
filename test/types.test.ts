@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest';
-import { cast, assume, typedEntries } from '../src/types';
+import { cast, assume, typedEntries } from '../dist/types.mjs';
 
 describe('types helpers', () => {
 	it('cast returns the input value unchanged', () => {

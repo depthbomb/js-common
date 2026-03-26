@@ -1,4 +1,4 @@
-import { Queue } from '../src/queue';
+import { Queue } from '../dist/queue.mjs';
 import { it, expect, describe } from 'vitest';
 
 describe('Queue', () => {

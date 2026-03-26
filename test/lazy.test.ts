@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest';
-import { lazy, lazyAsync, resettableLazy } from '../src/lazy';
+import { lazy, lazyAsync, resettableLazy } from '../dist/lazy.mjs';
 
 describe('lazy', () => {
 	it('initializes value only once', () => {

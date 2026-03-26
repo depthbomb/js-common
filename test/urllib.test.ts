@@ -1,4 +1,4 @@
-import { URLPath } from '../src/urllib';
+import { URLPath } from '../dist/urllib.mjs';
 import { it, vi, expect, describe } from 'vitest';
 
 describe('URLPath', () => {
