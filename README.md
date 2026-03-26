@@ -18,6 +18,7 @@ import {
 	rejectionTimeout,
 	pollUntil,
 	withTimeout,
+	retry,
 } from '@depthbomb/common/timing';
 
 await timeout(250);
@@ -28,6 +29,22 @@ setTimeout(() => { ready = true; }, 200);
 await pollUntil(() => ready, 50, 1_000);
 
 const value = await withTimeout(Promise.resolve('ok'), 500);
+
+const data = await retry(
+	async (attempt) => {
+		const response = await fetch('https://example.com/data');
+		if (!response.ok) {
+			throw new Error(`request failed on attempt ${attempt}`);
+		}
+		return response.json();
+	},
+	{
+		attempts: 4,
+		baseMs: 100,
+		maxMs: 1_000,
+		jitter: 'full',
+	}
+);
 ```
 
 ### `promise`

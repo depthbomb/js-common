@@ -1,6 +1,6 @@
-import { it, expect, describe } from 'vitest';
+import { afterEach, it, expect, describe, vi } from 'vitest';
 import { sequential, allSettledSuccessful } from '../dist/promise.mjs';
-import { timeout, pollUntil, withTimeout, rejectionTimeout } from '../dist/timing.mjs';
+import { timeout, pollUntil, withTimeout, rejectionTimeout, retry } from '../dist/timing.mjs';
 
 describe('async utilities', () => {
 	it('timeout resolves asynchronously', async () => {
@@ -76,5 +76,82 @@ describe('async utilities', () => {
 
 		await expect(sequential(tasks)).resolves.toEqual(['a', 'b', 'c']);
 		expect(order).toEqual([1, 2, 3]);
+	});
+});
+
+describe('retry', () => {
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.restoreAllMocks();
+	});
+
+	it('retries and eventually resolves', async () => {
+		vi.useFakeTimers();
+		let attempts = 0;
+
+		const promise = retry(async () => {
+			attempts++;
+			if (attempts < 3) {
+				throw new Error('fail');
+			}
+			return 'ok';
+		}, { attempts: 3, baseMs: 10 });
+
+		await vi.advanceTimersByTimeAsync(10);
+		await vi.advanceTimersByTimeAsync(20);
+		await expect(promise).resolves.toBe('ok');
+		expect(attempts).toBe(3);
+	});
+
+	it('throws the final error when all attempts fail', async () => {
+		vi.useFakeTimers();
+
+		const promise = retry(async () => {
+			throw new Error('boom');
+		}, { attempts: 2, baseMs: 10 });
+		const assertion = expect(promise).rejects.toThrow('boom');
+
+		await vi.advanceTimersByTimeAsync(10);
+		await assertion;
+	});
+
+	it('honors shouldRetry to stop early', async () => {
+		const shouldRetry = vi.fn(() => false);
+		let attempts = 0;
+
+		await expect(retry(async () => {
+			attempts++;
+			throw new Error('stop');
+		}, { attempts: 5, shouldRetry })).rejects.toThrow('stop');
+
+		expect(attempts).toBe(1);
+		expect(shouldRetry).toHaveBeenCalledTimes(1);
+	});
+
+	it('applies full jitter to backoff delay', async () => {
+		vi.useFakeTimers();
+		vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+		let attempts = 0;
+		const promise = retry(async () => {
+			attempts++;
+			if (attempts === 1) {
+				throw new Error('first');
+			}
+			return 42;
+		}, { attempts: 2, baseMs: 100, jitter: 'full' });
+
+		await vi.advanceTimersByTimeAsync(49);
+		expect(attempts).toBe(1);
+		await vi.advanceTimersByTimeAsync(1);
+		await expect(promise).resolves.toBe(42);
+		expect(attempts).toBe(2);
+	});
+
+	it('aborts before running when signal is already aborted', async () => {
+		const controller = new AbortController();
+		controller.abort();
+
+		await expect(retry(() => Promise.resolve('ok'), { signal: controller.signal })).rejects.toThrow('Aborted');
 	});
 });
