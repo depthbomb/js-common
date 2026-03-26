@@ -190,10 +190,14 @@ console.log(bounded.toArray()); // [2, 3, 4]
 
 ### `typing`
 
-Shared type aliases and type-oriented helpers such as `Awaitable`, `Maybe`, `Nullable`, `cast`, `assume`, and `typedEntries`.
+Shared type aliases and type-oriented helpers such as `Awaitable`, `Maybe`, `Nullable`, `Result`, `cast`, `assume`, `typedEntries`, `ok`, `err`, `isOk`, `mapOk`, `mapErr`, and `tryCatchAsync`.
 
 ```ts
-import { cast, assume, typedEntries, type Awaitable, type Maybe } from '@depthbomb/common/typing';
+import {
+	cast, assume, typedEntries,
+	ok, err, isOk, mapOk, mapErr, tryCatchAsync,
+	type Awaitable, type Maybe, type Result
+} from '@depthbomb/common/typing';
 
 const v = cast<object, { id: string }>({ id: 'a' });
 
@@ -204,6 +208,15 @@ const entries = typedEntries({ a: 1, b: 2 }); // typed key/value tuples
 
 const maybeName: Maybe<string> = undefined;
 const task: Awaitable<number> = Promise.resolve(1);
+
+const initial: Result<number, string> = ok(2);
+const doubled = mapOk(initial, (value) => value * 2);
+const message = mapErr(err('bad'), (e) => `error: ${e}`);
+
+const parsed = await tryCatchAsync(async () => JSON.parse('{"x":1}'));
+if (isOk(parsed)) {
+	console.log(parsed.value.x);
+}
 ```
 
 ### `url`

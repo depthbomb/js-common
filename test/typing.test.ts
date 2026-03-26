@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest';
-import { cast, assume, typedEntries } from '../dist/typing.mjs';
+import { ok, err, cast, isOk, mapOk, assume, mapErr, typedEntries, tryCatchAsync } from '../dist/typing.mjs';
 
 describe('types helpers', () => {
 	it('cast returns the input value unchanged', () => {
@@ -17,5 +17,42 @@ describe('types helpers', () => {
 			['first', 1],
 			['second', 'two'],
 		]);
+	});
+
+	it('ok and err create Result values', () => {
+		expect(ok(123)).toEqual({ ok: true, value: 123 });
+		expect(err('boom')).toEqual({ ok: false, error: 'boom' });
+	});
+
+	it('isOk narrows result variants', () => {
+		const success = ok(1);
+		const failure = err(new Error('x'));
+
+		expect(isOk(success)).toBe(true);
+		expect(isOk(failure)).toBe(false);
+	});
+
+	it('mapOk only maps success values', () => {
+		expect(mapOk(ok(2), (value) => value * 5)).toEqual({ ok: true, value: 10 });
+		expect(mapOk(err('nope'), () => 10)).toEqual({ ok: false, error: 'nope' });
+	});
+
+	it('mapErr only maps error values', () => {
+		expect(mapErr(err('bad'), (value) => value.toUpperCase())).toEqual({ ok: false, error: 'BAD' });
+		expect(mapErr(ok(10), () => 'x')).toEqual({ ok: true, value: 10 });
+	});
+
+	it('tryCatchAsync returns ok on success', async () => {
+		await expect(tryCatchAsync(async () => 42)).resolves.toEqual({ ok: true, value: 42 });
+	});
+
+	it('tryCatchAsync returns err on failure and supports error mapping', async () => {
+		await expect(tryCatchAsync(async () => {
+			throw new Error('boom');
+		})).resolves.toMatchObject({ ok: false });
+
+		await expect(tryCatchAsync(async () => {
+			throw new Error('boom');
+		}, () => 'mapped')).resolves.toEqual({ ok: false, error: 'mapped' });
 	});
 });
