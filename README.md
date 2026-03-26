@@ -113,10 +113,10 @@ s.getUser('1'); // cached for 1 second
 
 ### `state`
 
-State primitives: `ResettableValue`, `Flag`, and `resettableLazy`.
+State primitives: `ResettableValue`, `Flag`, `resettableLazy`, and `resettableLazyAsync`.
 
 ```ts
-import { Flag, ResettableValue, resettableLazy } from '@depthbomb/common/state';
+import { Flag, ResettableValue, resettableLazy, resettableLazyAsync } from '@depthbomb/common/state';
 
 const flag = new Flag();
 flag.setTrue();
@@ -131,6 +131,13 @@ const counter = resettableLazy(() => Math.random());
 const first = counter.get();
 counter.reset();
 const second = counter.get(); // recomputed
+
+const tokenCache = resettableLazyAsync(async () => {
+	const response = await fetch('https://example.com/token');
+	return response.text();
+});
+const token = await tokenCache.get();
+tokenCache.reset();
 ```
 
 ### `functional`

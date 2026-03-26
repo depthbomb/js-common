@@ -134,3 +134,24 @@ export function resettableLazy<T>(factory: () => T) {
 
 	return { get, reset };
 }
+
+export function resettableLazyAsync<T>(factory: () => Promise<T>) {
+	let promise: Maybe<Promise<T>>;
+
+	function get() {
+		if (!promise) {
+			promise = factory().catch((error) => {
+				promise = undefined;
+				throw error;
+			});
+		}
+
+		return promise;
+	}
+
+	function reset() {
+		promise = undefined;
+	}
+
+	return { get, reset };
+}
