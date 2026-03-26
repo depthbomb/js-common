@@ -1,4 +1,4 @@
-import { URLPath } from '../dist/url.mjs';
+import { url, URLPath } from '../dist/url.mjs';
 import { it, vi, expect, describe } from 'vitest';
 
 describe('URLPath', () => {
@@ -60,6 +60,34 @@ describe('URLPath', () => {
 		expect(url.searchParams.has('c')).toBe(false);
 	});
 
+	it('supports query patching and appending', () => {
+		const patched = new URLPath('https://example.com/path?a=1&keep=ok').withQueryPatch({
+			a: 2,
+			keep: undefined,
+			next: 'x',
+		});
+		const appended = patched.appendQuery({
+			a: 3,
+			tag: ['alpha', 'beta'],
+		});
+
+		expect(patched.searchParams.get('a')).toBe('2');
+		expect(patched.searchParams.has('keep')).toBe(false);
+		expect(patched.searchParams.get('next')).toBe('x');
+
+		expect(appended.searchParams.getAll('a')).toEqual(['2', '3']);
+		expect(appended.searchParams.getAll('tag')).toEqual(['alpha', 'beta']);
+	});
+
+	it('removes empty query values with withoutEmptyQuery', () => {
+		const cleaned = new URLPath('https://example.com/path?a=&b=1&c&d=&d=').withoutEmptyQuery();
+
+		expect(cleaned.searchParams.has('a')).toBe(false);
+		expect(cleaned.searchParams.get('b')).toBe('1');
+		expect(cleaned.searchParams.has('c')).toBe(false);
+		expect(cleaned.searchParams.has('d')).toBe(false);
+	});
+
 	it('supports hash updates', () => {
 		const base = new URLPath('https://example.com/path');
 		const withHash = base.withHash('anchor');
@@ -82,6 +110,14 @@ describe('URLPath', () => {
 		expect(native.toString()).toBe(resolved.toString());
 		expect(resolved.valueOf()).toBe(resolved.toString());
 		expect(`${resolved}`).toBe(resolved.toString());
+	});
+
+	it('builds encoded paths via tagged template helper', () => {
+		const userId = 'john/doe';
+		const postSlug = 'my first post';
+		const path = url`/users/${userId}/posts/${postSlug}`;
+
+		expect(path).toBe('/users/john%2Fdoe/posts/my%20first%20post');
 	});
 
 	it('delegates fetch to global fetch', async () => {

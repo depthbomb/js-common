@@ -11,6 +11,24 @@ export type QueryValue =
 // Taken from the `ufo` package
 export type QueryObject = Record<string, QueryValue | QueryValue[]>;
 
+/**
+ * Tagged-template helper for encoded URL path segments.
+ *
+ * @example
+ * const path = url`/users/${userId}/posts/${postId}`;
+ */
+export function url(strings: TemplateStringsArray, ...values: unknown[]) {
+	let output = '';
+	for (let i = 0; i < strings.length; i++) {
+		output += strings[i];
+		if (i < values.length) {
+			output += encodeURIComponent(String(values[i]));
+		}
+	}
+
+	return output;
+}
+
 function appendQueryValue(searchParams: URLSearchParams, key: string, value: QueryValue | QueryValue[]) {
 	if (value === null || value === undefined) {
 		return;
@@ -149,6 +167,40 @@ export class URLPath {
 		for (const [k, v] of Object.entries(params)) {
 			url.searchParams.delete(k);
 			appendQueryValue(url.searchParams, k, v);
+		}
+
+		return new URLPath(url);
+	}
+
+	public withQueryPatch(params: QueryObject): URLPath {
+		return this.withQuery(params);
+	}
+
+	public appendQuery(params: QueryObject): URLPath {
+		const url = new URL(this.#url.toString());
+
+		for (const [k, v] of Object.entries(params)) {
+			appendQueryValue(url.searchParams, k, v);
+		}
+
+		return new URLPath(url);
+	}
+
+	public withoutEmptyQuery(): URLPath {
+		const url    = new URL(this.#url.toString());
+		const visited = new Set<string>();
+
+		for (const key of url.searchParams.keys()) {
+			if (visited.has(key)) {
+				continue;
+			}
+
+			visited.add(key);
+
+			const values = url.searchParams.getAll(key);
+			if (values.every(value => value === '')) {
+				url.searchParams.delete(key);
+			}
 		}
 
 		return new URLPath(url);

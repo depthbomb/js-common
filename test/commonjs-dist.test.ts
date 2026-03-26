@@ -31,6 +31,7 @@ describe('dist commonjs builds', () => {
 		expect(root.tryCatchAsync).toBeTypeOf('function');
 		expect(root.Queue).toBeTypeOf('function');
 		expect(root.BoundedQueue).toBeTypeOf('function');
+		expect(root.url).toBeTypeOf('function');
 		expect(root.URLPath).toBeTypeOf('function');
 	});
 

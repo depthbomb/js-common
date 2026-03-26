@@ -224,14 +224,21 @@ if (isOk(parsed)) {
 URL-focused utilities centered around `URLPath`, an ergonomic wrapper for URL parsing, path composition, query/hash manipulation, and request dispatch via `fetch`.
 
 ```ts
-import { URLPath } from '@depthbomb/common/url';
+import { URLPath, url } from '@depthbomb/common/url';
 
 const api = new URLPath('https://example.com/api');
 const usersUrl = api
 	.joinpath('users', '42')
 	.withQuery({ include: ['roles', 'profile'] })
+	.withQueryPatch({ page: 1 })
+	.appendQuery({ include: 'permissions' })
+	.withoutEmptyQuery()
 	.withHash('details');
+
+const userPath = url`/users/${'john/doe'}/posts/${'my first post'}`;
 
 console.log(usersUrl.toString());
 // https://example.com/api/users/42?include=roles&include=profile#details
+console.log(userPath);
+// /users/john%2Fdoe/posts/my%20first%20post
 ```
