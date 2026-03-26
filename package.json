@@ -23,6 +23,10 @@
 			"import": "./dist/decorators.mjs",
 			"require": "./dist/decorators.cjs"
 		},
+		"./flag": {
+			"import": "./dist/flag.mjs",
+			"require": "./dist/flag.cjs"
+		},
 		"./fn": {
 			"import": "./dist/fn.mjs",
 			"require": "./dist/fn.cjs"
@@ -34,6 +38,10 @@
 		"./queue": {
 			"import": "./dist/queue.mjs",
 			"require": "./dist/queue.cjs"
+		},
+		"./resettable-value": {
+			"import": "./dist/resettable-value.mjs",
+			"require": "./dist/resettable-value.cjs"
 		},
 		"./types": {
 			"import": "./dist/types.mjs",
