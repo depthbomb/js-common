@@ -8,7 +8,9 @@ export default defineConfig({
 	format: ['cjs', 'esm'],
 	dts: true,
 	minify: true,
-	skipNodeModulesBundle: true,
+	deps: {
+		skipNodeModulesBundle: true
+	},
 	target: ['chrome142', 'firefox145', 'safari24', 'node24'],
 	exports: {
 		packageJson: false
