@@ -1,6 +1,7 @@
 export * from './timing';
 export * from './promise';
 export * from './decorators';
+export * from './guards';
 export * from './functional';
 export * from './lazy';
 export * from './collections';

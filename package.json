@@ -27,6 +27,10 @@
 			"import": "./dist/functional.mjs",
 			"require": "./dist/functional.cjs"
 		},
+		"./guards": {
+			"import": "./dist/guards.mjs",
+			"require": "./dist/guards.cjs"
+		},
 		"./lazy": {
 			"import": "./dist/lazy.mjs",
 			"require": "./dist/lazy.cjs"

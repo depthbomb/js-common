@@ -219,6 +219,25 @@ const weighted = pickWeighted([
 ]);
 ```
 
+### `guards`
+
+Runtime type guards for common narrowing patterns.
+
+```ts
+import { isRecord, isNonEmptyString, isNumber, isDateLike } from '@depthbomb/common/guards';
+
+const input: unknown = { name: 'Ada', createdAt: '2026-01-01' };
+
+if (isRecord(input) && isNonEmptyString(input.name) && isDateLike(input.createdAt)) {
+	// narrowed shape at runtime
+}
+
+const maybeCount: unknown = 42;
+if (isNumber(maybeCount)) {
+	console.log(maybeCount + 1);
+}
+```
+
 ### `typing`
 
 Shared type aliases and type-oriented helpers such as `Awaitable`, `Maybe`, `Nullable`, `Result`, `cast`, `assume`, `typedEntries`, `ok`, `err`, `isOk`, `mapOk`, `mapErr`, and `tryCatchAsync`.
