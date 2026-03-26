@@ -39,6 +39,10 @@
 			"import": "./dist/promise.mjs",
 			"require": "./dist/promise.cjs"
 		},
+		"./random": {
+			"import": "./dist/random.mjs",
+			"require": "./dist/random.cjs"
+		},
 		"./state": {
 			"import": "./dist/state.mjs",
 			"require": "./dist/state.cjs"

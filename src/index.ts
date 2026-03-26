@@ -5,6 +5,7 @@ export * from './functional';
 export * from './lazy';
 export * from './collections';
 export * from './number';
+export * from './random';
 export * from './state';
 export * from './typing';
 export * from './url';

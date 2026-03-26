@@ -202,6 +202,23 @@ const total = sum([1, 2, 3, 4]); // 10
 const mean = average([1, 2, 3, 4]); // 2.5
 ```
 
+### `random`
+
+Cross-environment random helpers for ranges and selection.
+
+```ts
+import { randomFloat, randomInt, pickRandom, pickWeighted } from '@depthbomb/common/random';
+
+const f = randomFloat(5, 10); // 5 <= f < 10
+const i = randomInt(1, 6); // inclusive
+const choice = pickRandom(['red', 'green', 'blue']);
+const weighted = pickWeighted([
+	{ value: 'small', weight: 1 },
+	{ value: 'medium', weight: 3 },
+	{ value: 'large', weight: 6 },
+]);
+```
+
 ### `typing`
 
 Shared type aliases and type-oriented helpers such as `Awaitable`, `Maybe`, `Nullable`, `Result`, `cast`, `assume`, `typedEntries`, `ok`, `err`, `isOk`, `mapOk`, `mapErr`, and `tryCatchAsync`.
