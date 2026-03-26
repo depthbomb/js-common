@@ -1,5 +1,16 @@
 import type { Maybe } from './typing';
 
+export interface IBoundedQueueOptions {
+	maxSize: number;
+	overflow?: BoundedQueueOverflow;
+}
+
+export const enum BoundedQueueOverflow {
+	DropOldest,
+	DropNewest,
+	Throw
+}
+
 export class Queue<T> {
 	#items = [] as T[];
 	#head = 0;
@@ -85,5 +96,85 @@ export class Queue<T> {
 	 */
 	public toArray(): T[] {
 		return this.#items.slice(this.#head);
+	}
+}
+
+export class BoundedQueue<T> {
+	readonly #maxSize: number;
+	readonly #overflow: BoundedQueueOverflow;
+	readonly #queue: Queue<T>;
+
+	public constructor(options: IBoundedQueueOptions, initial?: Iterable<T>) {
+		if (!Number.isInteger(options.maxSize) || options.maxSize < 1) {
+			throw new Error('maxSize must be an integer >= 1');
+		}
+
+		this.#maxSize  = options.maxSize;
+		this.#overflow = options.overflow ?? BoundedQueueOverflow.DropOldest;
+		this.#queue    = new Queue<T>();
+
+		if (initial) {
+			for (const value of initial) {
+				this.enqueue(value);
+			}
+		}
+	}
+
+	public get size() {
+		return this.#queue.size;
+	}
+
+	public get isEmpty() {
+		return this.#queue.isEmpty;
+	}
+
+	public get isFull() {
+		return this.size >= this.#maxSize;
+	}
+
+	public get maxSize() {
+		return this.#maxSize;
+	}
+
+	public get overflow() {
+		return this.#overflow;
+	}
+
+	public enqueue(item: T): void {
+		if (!this.isFull) {
+			this.#queue.enqueue(item);
+			return;
+		}
+
+		if (this.#overflow === BoundedQueueOverflow.DropNewest) {
+			return;
+		}
+
+		if (this.#overflow === BoundedQueueOverflow.Throw) {
+			throw new Error('BoundedQueue overflow');
+		}
+
+		this.#queue.dequeue();
+		this.#queue.enqueue(item);
+	}
+
+	public dequeue(): Maybe<T> {
+		return this.#queue.dequeue();
+	}
+
+	public peek(): Maybe<T> {
+		return this.#queue.peek();
+	}
+
+	public clear(): void {
+		this.#queue.clear();
+	}
+
+	public [Symbol.iterator](): Iterator<T> {
+		return this.#queue[Symbol.iterator]();
+	}
+
+	public toArray(): T[] {
+		return this.#queue.toArray();
 	}
 }

@@ -22,6 +22,7 @@ import {
 	abortAfter,
 	withAbort,
 	raceSignals,
+	RetryJitter,
 } from '@depthbomb/common/timing';
 
 await timeout(250);
@@ -45,7 +46,7 @@ const data = await retry(
 		attempts: 4,
 		baseMs: 100,
 		maxMs: 1_000,
-		jitter: 'full',
+		jitter: RetryJitter.Full,
 	}
 );
 
@@ -170,10 +171,10 @@ const token = await getToken(); // promise created once
 
 ### `collections`
 
-A lightweight generic FIFO queue with `enqueue`, `dequeue`, `peek`, iteration support, and internal compaction to keep long-running usage efficient.
+A lightweight generic FIFO queue with `enqueue`, `dequeue`, `peek`, iteration support, and internal compaction to keep long-running usage efficient. Also includes `BoundedQueue` for fixed-capacity use cases.
 
 ```ts
-import { Queue } from '@depthbomb/common/collections';
+import { Queue, BoundedQueue, BoundedQueueOverflow } from '@depthbomb/common/collections';
 
 const q = new Queue<number>([1, 2]);
 q.enqueue(3);
@@ -181,6 +182,10 @@ q.enqueue(3);
 console.log(q.peek());    // 1
 console.log(q.dequeue()); // 1
 console.log(q.toArray()); // [2, 3]
+
+const bounded = new BoundedQueue<number>({ maxSize: 3, overflow: BoundedQueueOverflow.DropOldest }, [1, 2, 3]);
+bounded.enqueue(4);
+console.log(bounded.toArray()); // [2, 3, 4]
 ```
 
 ### `typing`
