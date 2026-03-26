@@ -1,12 +1,5 @@
 import { it, expect, describe } from 'vitest';
-import {
-	timeout,
-	pollUntil,
-	sequential,
-	withTimeout,
-	rejectionTimeout,
-	allSettledSuccessful,
-} from '../src/async';
+import { timeout, pollUntil, sequential, withTimeout, rejectionTimeout, allSettledSuccessful } from '../src/async';
 
 describe('async utilities', () => {
 	it('timeout resolves asynchronously', async () => {
