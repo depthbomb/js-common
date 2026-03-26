@@ -1,12 +1,12 @@
 import type { Maybe } from './types';
 
 export class Queue<T> {
-	private items: T[] = [];
-	private head = 0;
+	#items = [] as T[];
+	#head = 0;
 
 	public constructor(initial?: Iterable<T>) {
 		if (initial) {
-			this.items = [...initial];
+			this.#items = [...initial];
 		}
 	}
 
@@ -14,7 +14,7 @@ export class Queue<T> {
 	 * Get the number of items in the queue.
 	 */
 	public get size(): number {
-		return this.items.length - this.head;
+		return this.#items.length - this.#head;
 	}
 
 	/**
@@ -30,7 +30,7 @@ export class Queue<T> {
 	 * @param item Item to add to the end of the queue
 	 */
 	public enqueue(item: T): void {
-		this.items.push(item);
+		this.#items.push(item);
 	}
 
 	/**
@@ -39,14 +39,14 @@ export class Queue<T> {
 	 * @returns The item at the front of the queue, or undefined if the queue is empty
 	 */
 	public dequeue(): Maybe<T> {
-		if (this.head >= this.items.length) {
+		if (this.#head >= this.#items.length) {
 			return undefined;
 		}
 
-		const item = this.items[this.head++];
-		if (this.head >= 64 && this.head * 2 >= this.items.length) {
-			this.items = this.items.slice(this.head);
-			this.head  = 0;
+		const item = this.#items[this.#head++];
+		if (this.#head >= 64 && this.#head * 2 >= this.#items.length) {
+			this.#items = this.#items.slice(this.#head);
+			this.#head  = 0;
 		}
 
 		return item;
@@ -58,15 +58,15 @@ export class Queue<T> {
 	 * @returns The item at the front of the queue without removing it, or undefined if the queue is empty
 	 */
 	public peek(): Maybe<T> {
-		return this.items[this.head];
+		return this.#items[this.#head];
 	}
 
 	/**
 	 * Clear all items from the queue.
 	 */
 	public clear(): void {
-		this.items = [];
-		this.head  = 0;
+		this.#items = [];
+		this.#head  = 0;
 	}
 
 	/**
@@ -84,6 +84,6 @@ export class Queue<T> {
 	 * @returns An array containing all items in the queue in order
 	 */
 	public toArray(): T[] {
-		return this.items.slice(this.head);
+		return this.#items.slice(this.#head);
 	}
 }
