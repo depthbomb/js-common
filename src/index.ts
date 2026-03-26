@@ -4,6 +4,7 @@ export * from './decorators';
 export * from './functional';
 export * from './lazy';
 export * from './collections';
+export * from './number';
 export * from './state';
 export * from './typing';
 export * from './url';

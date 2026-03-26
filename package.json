@@ -31,6 +31,10 @@
 			"import": "./dist/lazy.mjs",
 			"require": "./dist/lazy.cjs"
 		},
+		"./number": {
+			"import": "./dist/number.mjs",
+			"require": "./dist/number.cjs"
+		},
 		"./promise": {
 			"import": "./dist/promise.mjs",
 			"require": "./dist/promise.cjs"

@@ -29,6 +29,7 @@ describe('dist commonjs builds', () => {
 		expect(root.pMap).toBeTypeOf('function');
 		expect(root.resettableLazyAsync).toBeTypeOf('function');
 		expect(root.tryCatchAsync).toBeTypeOf('function');
+		expect(root.clamp).toBeTypeOf('function');
 		expect(root.Queue).toBeTypeOf('function');
 		expect(root.BoundedQueue).toBeTypeOf('function');
 		expect(root.url).toBeTypeOf('function');
