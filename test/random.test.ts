@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { pickRandom, pickWeighted, randomFloat, randomInt } from '../dist/random.mjs';
+import { it, vi, expect, describe, afterEach } from 'vitest';
+import { randomInt, pickRandom, randomFloat, pickWeighted } from '../dist/random.mjs';
 
 describe('random utilities', () => {
 	afterEach(() => {

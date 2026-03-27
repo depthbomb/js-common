@@ -1,5 +1,8 @@
 import type { Awaitable } from './typing';
 
+/**
+ * Configuration for promise concurrency helpers.
+ */
 export interface IConcurrencyOptions {
 	concurrency?: number;
 }
@@ -17,6 +20,9 @@ export async function allSettledSuccessful<T>(promises: Array<Awaitable<T>>): Pr
 		.map((r) => r.value);
 }
 
+/**
+ * Detailed output from {@link allSettledDetailed}.
+ */
 export interface SettledDetailed<T> {
 	results: Array<PromiseSettledResult<T>>;
 	fulfilled: T[];
@@ -60,6 +66,11 @@ export async function sequential<T>(tasks: Array<() => Awaitable<T>>): Promise<T
 	return results;
 }
 
+/**
+ * Validates and normalizes a concurrency value.
+ *
+ * @param concurrency Candidate concurrency limit.
+ */
 function validateConcurrency(concurrency: number): number {
 	if (!Number.isInteger(concurrency) || concurrency < 1) {
 		throw new Error('concurrency must be an integer >= 1');

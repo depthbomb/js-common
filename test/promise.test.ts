@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { pMap, pool, allSettledDetailed } from '../dist/promise.mjs';
 import { timeout } from '../dist/timing.mjs';
+import { it, expect, describe } from 'vitest';
+import { pMap, pool, allSettledDetailed } from '../dist/promise.mjs';
 
 describe('promise utilities', () => {
 	it('allSettledDetailed returns full results and split values/errors', async () => {

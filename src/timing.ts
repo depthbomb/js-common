@@ -1,5 +1,8 @@
 import type { Maybe, Awaitable } from './typing';
 
+/**
+ * Options for {@link retry}.
+ */
 export interface IRetryOptions {
 	attempts?: number;
 	baseMs?: number;
@@ -9,6 +12,9 @@ export interface IRetryOptions {
 	shouldRetry?: (error: unknown, attempt: number) => Awaitable<boolean>;
 }
 
+/**
+ * Jitter strategies for retry delays.
+ */
 export const enum RetryJitter {
 	None,
 	Full,
@@ -74,45 +80,6 @@ export async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T
 	}
 }
 
-function toAbortError() {
-	const error = new Error('Aborted');
-	error.name = 'AbortError';
-
-	return error;
-}
-
-function throwIfAborted(signal?: AbortSignal) {
-	if (signal?.aborted) {
-		throw toAbortError();
-	}
-}
-
-async function waitFor(ms: number, signal?: AbortSignal) {
-	if (ms <= 0) {
-		throwIfAborted(signal);
-		return;
-	}
-
-	await new Promise<void>((resolve, reject) => {
-		const timeoutId = setTimeout(() => {
-			if (signal) {
-				signal.removeEventListener('abort', onAbort);
-			}
-			resolve();
-		}, ms);
-
-		function onAbort() {
-			clearTimeout(timeoutId);
-			signal?.removeEventListener('abort', onAbort);
-			reject(toAbortError());
-		}
-
-		if (signal) {
-			signal.addEventListener('abort', onAbort, { once: true });
-		}
-	});
-}
-
 /**
  * Returns an AbortSignal that aborts automatically after the given number of milliseconds.
  *
@@ -136,10 +103,10 @@ export function abortAfter(ms: number): AbortSignal {
  *
  * @param signals Input abort signals.
  */
-export function raceSignals(...signals: Array<AbortSignal | undefined>): AbortSignal {
+export function raceSignals(...signals: Array<Maybe<AbortSignal>>): AbortSignal {
 	const validSignals = signals.filter((signal): signal is AbortSignal => signal !== undefined);
-	const controller = new AbortController();
-	const listeners = new Map<AbortSignal, () => void>();
+	const controller   = new AbortController();
+	const listeners    = new Map<AbortSignal, () => void>();
 
 	const abort = () => {
 		if (controller.signal.aborted) {
@@ -201,18 +168,6 @@ export async function withAbort<T>(promise: Awaitable<T>, signal: AbortSignal): 
 	});
 }
 
-function getJitteredDelay(delayMs: number, jitter: RetryJitter): number {
-	if (jitter === RetryJitter.None) {
-		return delayMs;
-	}
-
-	if (jitter === RetryJitter.Full) {
-		return Math.floor(Math.random() * delayMs);
-	}
-
-	return Math.floor(delayMs / 2 + Math.random() * (delayMs / 2));
-}
-
 /**
  * Retries an operation with exponential backoff.
  *
@@ -260,4 +215,55 @@ export async function retry<T>(fn: (attempt: number) => Awaitable<T>, options: I
 	}
 
 	throw new Error('Unreachable');
+}
+
+function toAbortError() {
+	const error = new Error('Aborted');
+	error.name = 'AbortError';
+
+	return error;
+}
+
+function throwIfAborted(signal?: AbortSignal) {
+	if (signal?.aborted) {
+		throw toAbortError();
+	}
+}
+
+async function waitFor(ms: number, signal?: AbortSignal) {
+	if (ms <= 0) {
+		throwIfAborted(signal);
+		return;
+	}
+
+	await new Promise<void>((resolve, reject) => {
+		const timeoutId = setTimeout(() => {
+			if (signal) {
+				signal.removeEventListener('abort', onAbort);
+			}
+			resolve();
+		}, ms);
+
+		function onAbort() {
+			clearTimeout(timeoutId);
+			signal?.removeEventListener('abort', onAbort);
+			reject(toAbortError());
+		}
+
+		if (signal) {
+			signal.addEventListener('abort', onAbort, { once: true });
+		}
+	});
+}
+
+function getJitteredDelay(delayMs: number, jitter: RetryJitter) {
+	if (jitter === RetryJitter.None) {
+		return delayMs;
+	}
+
+	if (jitter === RetryJitter.Full) {
+		return Math.floor(Math.random() * delayMs);
+	}
+
+	return Math.floor(delayMs / 2 + Math.random() * (delayMs / 2));
 }

@@ -115,6 +115,11 @@ export class Flag extends ResettableValue<boolean> {
 	}
 }
 
+/**
+ * Creates a resettable lazy value accessor.
+ *
+ * @param factory Factory used to create the value.
+ */
 export function resettableLazy<T>(factory: () => T) {
 	let cached: Maybe<T>;
 	let initialized = false;
@@ -135,6 +140,11 @@ export function resettableLazy<T>(factory: () => T) {
 	return { get, reset };
 }
 
+/**
+ * Creates a resettable async lazy accessor.
+ *
+ * @param factory Async factory used to create the value.
+ */
 export function resettableLazyAsync<T>(factory: () => Promise<T>) {
 	let promise: Maybe<Promise<T>>;
 
