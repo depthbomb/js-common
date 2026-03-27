@@ -9,6 +9,7 @@ import {
 	isString,
 	isTruthy,
 	isBoolean,
+	isPromise,
 	isDateLike,
 	isFunction,
 	isUndefined,
@@ -56,13 +57,22 @@ describe('guards', () => {
 		expect(isPositiveNumber(Number.POSITIVE_INFINITY)).toBe(false);
 	});
 
-	it('isFunction and isClass classify callable values correctly', () => {
+	it('isFunction, isPromise, and isClass classify callable values correctly', () => {
 		class ExampleClass {}
 		function regularFunction() {}
+		const promise = Promise.resolve(42);
+		const nonPromise = 123;
+		const thenable = { then: () => {} };
 
 		expect(isFunction(regularFunction)).toBe(true);
 		expect(isFunction(ExampleClass)).toBe(true);
 		expect(isFunction({})).toBe(false);
+
+		expect(isPromise(promise)).toBe(true);
+		expect(isPromise(nonPromise)).toBe(false);
+		expect(isPromise(regularFunction)).toBe(false);
+		expect(isPromise({})).toBe(false);
+		expect(isPromise(thenable)).toBe(true);
 
 		expect(isClass(ExampleClass)).toBe(true);
 		expect(isClass(regularFunction)).toBe(false);
@@ -118,6 +128,7 @@ describe('guards', () => {
 		expect(is.positiveNumber).toBe(isPositiveNumber);
 		expect(is.record).toBe(isRecord);
 		expect(is.function).toBe(isFunction);
+		expect(is.promise).toBe(isPromise);
 		expect(is.class).toBe(isClass);
 		expect(is.null).toBe(isNull);
 		expect(is.undefined).toBe(isUndefined);

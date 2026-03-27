@@ -64,6 +64,20 @@ export function isFunction(value: unknown): value is Function {
 }
 
 /**
+ * Returns `true` when `value` is a {@link PromiseConstructor|Promise}.
+ *
+ * @param value Value to check.
+ */
+export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		'then' in value &&
+		typeof (value as any).then === 'function'
+	);
+}
+
+/**
  * Returns `true` when `value` is an ES class constructor.
  *
  * @param value Value to check.
@@ -157,6 +171,7 @@ export const is = {
 	positiveNumber: isPositiveNumber,
 	record: isRecord,
 	function: isFunction,
+	promise: isPromise,
 	class: isClass,
 	null: isNull,
 	undefined: isUndefined,
