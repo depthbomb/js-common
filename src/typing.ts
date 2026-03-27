@@ -1,7 +1,10 @@
-export type Awaitable<T>           = PromiseLike<T> | T;
-export type Maybe<T>               = T | undefined;
-export type Nullable<T>            = T | null;
-export type Result<T, E = unknown> = { ok: true; value: T } | { ok: false; error: E };
+export type Awaitable<T>                             = PromiseLike<T> | T;
+export type Maybe<T>                                 = T | undefined;
+export type Nullable<T>                              = T | null;
+export type Arrayable<T>                             = T | Array<T>;
+export type Prettify<T>                              = { [K in keyof T]: T[K] } & {};
+export type Result<T, E = unknown>                   = { ok: true; value: T } | { ok: false; error: E };
+export type Class<T, Args extends unknown[] = any[]> = new (...args: Args) => T;
 
 export const cast = <T, U extends T>(value: U) => value;
 

@@ -1,3 +1,5 @@
+import type { Arrayable } from './typing';
+
 export type URLLike = string | URL | URLPath;
 // Taken from the `ufo` package
 export type QueryValue =
@@ -29,7 +31,7 @@ export function url(strings: TemplateStringsArray, ...values: unknown[]) {
 	return output;
 }
 
-function appendQueryValue(searchParams: URLSearchParams, key: string, value: QueryValue | QueryValue[]) {
+function appendQueryValue(searchParams: URLSearchParams, key: string, value: Arrayable<QueryValue>) {
 	if (value === null || value === undefined) {
 		return;
 	}

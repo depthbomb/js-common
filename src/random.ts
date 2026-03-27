@@ -3,16 +3,6 @@ export interface IWeightedItem<T> {
 	weight: number;
 }
 
-function validateBounds(min: number, max: number) {
-	if (!Number.isFinite(min) || !Number.isFinite(max)) {
-		throw new Error('min and max must be finite numbers');
-	}
-
-	if (min > max) {
-		throw new Error('min must be <= max');
-	}
-}
-
 export function randomFloat(min = 0, max = 1): number {
 	validateBounds(min, max);
 
@@ -67,4 +57,14 @@ export function pickWeighted<T>(items: Array<IWeightedItem<T>>): T {
 	}
 
 	return items[items.length - 1]!.value;
+}
+
+function validateBounds(min: number, max: number) {
+	if (!Number.isFinite(min) || !Number.isFinite(max)) {
+		throw new Error('min and max must be finite numbers');
+	}
+
+	if (min > max) {
+		throw new Error('min must be <= max');
+	}
 }
