@@ -23,6 +23,14 @@ export type Prettify<T> = { [K in keyof T]: T[K] } & {};
  */
 export type Result<T, E = unknown> = { ok: true; value: T } | { ok: false; error: E };
 /**
+ * A generic function type.
+ */
+export type Fn<Return = void, Args extends unknown[] = unknown[]> = (...args: Args) => Return;
+/**
+ * A generic function type that may return either a value or a promise-like value.
+ */
+export type AwaitableFn<Return = void, Args extends unknown[] = unknown[]> = (...args: Args) => Awaitable<Return>;
+/**
  * Class constructor type.
  */
 export type Class<T, Args extends unknown[] = any[]> = new (...args: Args) => T;
