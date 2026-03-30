@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest';
-import { ok, err, cast, isOk, mapOk, assume, mapErr, typedEntries, tryCatchAsync } from '../dist/typing.mjs';
+import { ok, err, cast, isOk, mapOk, assume, mapErr, tryCatch, typedEntries, tryCatchAsync } from '../dist/typing.mjs';
 
 describe('types helpers', () => {
 	it('cast returns the input value unchanged', () => {
@@ -42,15 +42,44 @@ describe('types helpers', () => {
 		expect(mapErr(ok(10), () => 'x')).toEqual({ ok: true, value: 10 });
 	});
 
+	it('tryCatch returns ok on successful operation', () => {
+		const result = tryCatch(() => 123);
+		expect(result).toEqual({ ok: true, value: 123 });
+	});
+
+	it('tryCatch returns err when operation throws', () => {
+		const result = tryCatch(() => { throw new Error('fail'); }) as { ok: false; error: Error };
+		expect(result.ok).toBe(false);
+		expect(result.error.message).toBe('fail');
+	});
+
+	it('tryCatch supports custom error mapping', () => {
+		const result = tryCatch(() => { throw new Error('fail'); }, (e) => 'mapped');
+		expect(result).toEqual({ ok: false, error: 'mapped' });
+	});
+
+	it('tryCatch does not catch successful values when mapError is provided', () => {
+		const result = tryCatch(() => 5, (e) => 'mapped');
+		expect(result).toEqual({ ok: true, value: 5 });
+	});
+
+	it('tryCatch works with non-Error thrown values', () => {
+		const result = tryCatch(() => { throw 'oops'; }) as { ok: false; error: 'oops' };
+		expect(result.ok).toBe(false);
+		expect(result.error).toBe('oops');
+	});
+
 	it('tryCatchAsync returns ok on success', async () => {
 		await expect(tryCatchAsync(async () => 42)).resolves.toEqual({ ok: true, value: 42 });
 	});
 
-	it('tryCatchAsync returns err on failure and supports error mapping', async () => {
+	it('tryCatchAsync returns err on failure', async () => {
 		await expect(tryCatchAsync(async () => {
 			throw new Error('boom');
 		})).resolves.toMatchObject({ ok: false });
+	});
 
+	it('tryCatchAsync supports custom error mapping', async () => {
 		await expect(tryCatchAsync(async () => {
 			throw new Error('boom');
 		}, () => 'mapped')).resolves.toEqual({ ok: false, error: 'mapped' });
