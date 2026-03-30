@@ -45,6 +45,7 @@ export function roundTo(value: number, decimals = 0): number {
 	}
 
 	const factor = 10 ** decimals;
+
 	return Math.round((value + Number.EPSILON) * factor) / factor;
 }
 
@@ -54,11 +55,7 @@ export function roundTo(value: number, decimals = 0): number {
  * @param values Numbers to add.
  */
 export function sum(values: Iterable<number>): number {
-	let total = 0;
-	for (const value of values) {
-		total += value;
-	}
-
+	const [total] = sumAndCount(values);
 	return total;
 }
 
@@ -68,16 +65,22 @@ export function sum(values: Iterable<number>): number {
  * @param values Numbers to average.
  */
 export function average(values: Iterable<number>): number {
-	let total = 0;
-	let count = 0;
-	for (const value of values) {
-		total += value;
-		count++;
-	}
-
+	const [total, count] = sumAndCount(values);
 	if (count === 0) {
 		throw new Error('cannot compute average of empty iterable');
 	}
 
 	return total / count;
+}
+
+function sumAndCount(values: Iterable<number>) {
+	let total = 0;
+	let count = 0;
+
+	for (const v of values) {
+		total += v;
+		count++;
+	}
+
+	return [total, count];
 }

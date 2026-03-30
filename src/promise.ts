@@ -8,6 +8,15 @@ export interface IConcurrencyOptions {
 }
 
 /**
+ * Detailed output from {@link allSettledDetailed}.
+ */
+export interface ISettledDetailed<T> {
+	results: Array<PromiseSettledResult<T>>;
+	fulfilled: T[];
+	rejected: unknown[];
+}
+
+/**
  * Waits for all promises to settle and returns an array of successful results.
  *
  * @param promises An array of promises to wait for
@@ -21,20 +30,11 @@ export async function allSettledSuccessful<T>(promises: Array<Awaitable<T>>): Pr
 }
 
 /**
- * Detailed output from {@link allSettledDetailed}.
- */
-export interface SettledDetailed<T> {
-	results: Array<PromiseSettledResult<T>>;
-	fulfilled: T[];
-	rejected: unknown[];
-}
-
-/**
  * Waits for all values to settle and returns full settled results plus split fulfilled/rejected lists.
  *
  * @param promises Values or promises to settle.
  */
-export async function allSettledDetailed<T>(promises: Array<Awaitable<T>>): Promise<SettledDetailed<T>> {
+export async function allSettledDetailed<T>(promises: Array<Awaitable<T>>): Promise<ISettledDetailed<T>> {
 	const results   = await Promise.allSettled(promises) as Array<PromiseSettledResult<T>>;
 	const fulfilled = [] as T[];
 	const rejected  = [] as unknown[];
@@ -64,19 +64,6 @@ export async function sequential<T>(tasks: Array<() => Awaitable<T>>): Promise<T
 	}
 
 	return results;
-}
-
-/**
- * Validates and normalizes a concurrency value.
- *
- * @param concurrency Candidate concurrency limit.
- */
-function validateConcurrency(concurrency: number): number {
-	if (!Number.isInteger(concurrency) || concurrency < 1) {
-		throw new Error('concurrency must be an integer >= 1');
-	}
-
-	return concurrency;
 }
 
 /**
@@ -130,4 +117,12 @@ export async function pMap<T, U>(values: Iterable<T>, mapper: (value: T, index: 
 	}
 
 	return pool(tasks, options);
+}
+
+function validateConcurrency(concurrency: number) {
+	if (!Number.isInteger(concurrency) || concurrency < 1) {
+		throw new Error('concurrency must be an integer >= 1');
+	}
+
+	return concurrency;
 }
