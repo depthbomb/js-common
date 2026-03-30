@@ -1,3 +1,14 @@
+import { deprecate } from './functional';
+import {
+	ok as _ok,
+	err as _err,
+	isOk as _isOk,
+	mapOk as _mapOk,
+	mapErr as _mapErr,
+	tryCatch as _tryCatch,
+	tryCatchAsync as _tryCatchAsync
+} from './result';
+
 /**
  * A value or a promise-like value.
  */
@@ -18,10 +29,6 @@ export type Arrayable<T> = T | Array<T>;
  * Flattens mapped/intersection display in editor tooltips.
  */
 export type Prettify<T> = { [K in keyof T]: T[K] } & {};
-/**
- * Discriminated result type for success/failure operations.
- */
-export type Result<T, E = unknown> = { ok: true; value: T } | { ok: false; error: E };
 /**
  * A generic function type.
  */
@@ -88,111 +95,78 @@ export function typedEntries<T extends object>(obj: T) {
 }
 
 /**
- * Creates a successful {@link Result}.
- *
- * @param value Success value.
+ * @deprecated
+ * Import from the `result` module instead.
  */
-export function ok<T>(value: T): Result<T, never> {
-	return { ok: true, value };
-}
+export const ok = deprecate(_ok, {
+	deprecatedName: 'typing#ok',
+	replacementName: 'result#ok',
+	deprecatedSince: '2.3.0',
+	removedIn: '3.0.0'
+});
 
 /**
- * Creates a failed {@link Result}.
- *
- * @param error Failure value.
+ * @deprecated
+ * Import from the `result` module instead.
  */
-export function err<E>(error: E): Result<never, E> {
-	return { ok: false, error };
-}
+export const err = deprecate(_err, {
+	deprecatedName: 'typing#err',
+	replacementName: 'result#err',
+	deprecatedSince: '2.3.0',
+	removedIn: '3.0.0'
+});
 
 /**
- * Type guard for successful {@link Result} values.
- *
- * @param result Result to check.
+ * @deprecated
+ * Import from the `result` module instead.
  */
-export function isOk<T, E>(result: Result<T, E>): result is { ok: true; value: T } {
-	return result.ok;
-}
+export const isOk = deprecate(_isOk, {
+	deprecatedName: 'typing#isOk',
+	replacementName: 'result#isOk',
+	deprecatedSince: '2.3.0',
+	removedIn: '3.0.0'
+});
 
 /**
- * Maps only the success branch of a {@link Result}.
- *
- * @param result Result to map.
- * @param mapper Success mapper.
+ * @deprecated
+ * Import from the `result` module instead.
  */
-export function mapOk<T, U, E>(result: Result<T, E>, mapper: (value: T) => U): Result<U, E> {
-	if (!result.ok) {
-		return result;
-	}
-
-	return ok(mapper(result.value));
-}
+export const mapOk = deprecate(_mapOk, {
+	deprecatedName: 'typing#mapOk',
+	replacementName: 'result#mapOk',
+	deprecatedSince: '2.3.0',
+	removedIn: '3.0.0'
+});
 
 /**
- * Maps only the error branch of a {@link Result}.
- *
- * @param result Result to map.
- * @param mapper Error mapper.
+ * @deprecated
+ * Import from the `result` module instead.
  */
-export function mapErr<T, E, F>(result: Result<T, E>, mapper: (error: E) => F): Result<T, F> {
-	if (result.ok) {
-		return result;
-	}
-
-	return err(mapper(result.error));
-}
+export const mapErr = deprecate(_mapErr, {
+	deprecatedName: 'typing#mapErr',
+	replacementName: 'result#mapErr',
+	deprecatedSince: '2.3.0',
+	removedIn: '3.0.0'
+});
 
 /**
- * Executes a function and captures any thrown error as a {@link Result}.
- *
- * @typeParam T - The success value type.
- *
- * @param operation Function to execute.
- *
- * @returns A {@link Result} containing the returned value on success,
- * or the thrown error as `unknown` on failure.
+ * @deprecated
+ * Import from the `result` module instead.
  */
-export function tryCatch<T>(operation: () => T): Result<T, unknown>;
-/**
- * Executes a function and captures any thrown error as a {@link Result},
- * mapping the error to a custom type.
- *
- * @typeParam T - The success value type.
- * @typeParam E - The mapped error type.
- *
- * @param operation Function to execute.
- * @param mapError Function to transform the thrown error into a typed value.
- *
- * @returns A {@link Result} containing the returned value on success,
- * or the mapped error on failure.
- */
-export function tryCatch<T, E>(operation: () => T, mapError: (e: unknown) => E): Result<T, E>;
-export function tryCatch<T, E>(operation: () => T, mapError?: (e: unknown) => E) {
-	try {
-		return ok(operation());
-	} catch (e) {
-		return err(mapError ? mapError(e) : e);
-	}
-}
+export const tryCatch = deprecate(_tryCatch, {
+	deprecatedName: 'typing#tryCatch',
+	replacementName: 'result#tryCatch',
+	deprecatedSince: '2.3.0',
+	removedIn: '3.0.0'
+});
 
 /**
- * Runs an async operation and converts thrown errors into a failed {@link Result}.
- *
- * @param operation Async operation to execute.
+ * @deprecated
+ * Import from the `result` module instead.
  */
-export async function tryCatchAsync<T>(operation: () => Awaitable<T>): Promise<Result<T, unknown>>;
-/**
- * Runs an async operation and maps thrown errors into a custom error type.
- *
- * @param operation Async operation to execute.
- * @param mapError Error mapper.
- */
-export async function tryCatchAsync<T, E>(operation: () => Awaitable<T>, mapError: (error: unknown) => E
-): Promise<Result<T, E>>;
-export async function tryCatchAsync<T, E>(operation: () => Awaitable<T>, mapError?: (error: unknown) => E) {
-	try {
-		return ok(await operation());
-	} catch (error) {
-		return err(mapError ? mapError(error) : error);
-	}
-}
+export const tryCatchAsync = deprecate(_tryCatchAsync, {
+	deprecatedName: 'typing#tryCatchAsync',
+	replacementName: 'result#tryCatchAsync',
+	deprecatedSince: '2.3.0',
+	removedIn: '3.0.0'
+});

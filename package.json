@@ -11,10 +11,6 @@
 		"utilities"
 	],
 	"exports": {
-		".": {
-			"import": "./dist/index.mjs",
-			"require": "./dist/index.cjs"
-		},
 		"./collections": {
 			"import": "./dist/collections.mjs",
 			"require": "./dist/collections.cjs"
@@ -46,6 +42,10 @@
 		"./random": {
 			"import": "./dist/random.mjs",
 			"require": "./dist/random.cjs"
+		},
+		"./result": {
+			"import": "./dist/result.mjs",
+			"require": "./dist/result.cjs"
 		},
 		"./state": {
 			"import": "./dist/state.mjs",
