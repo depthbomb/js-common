@@ -3,7 +3,82 @@ const FUNCTION_HASH_IDS    = new WeakMap<Function, number>();
 
 let functionHashCounter = 0;
 
+/**
+ * Creates a method decorator that caches the return value of the method for the specified
+ * {@link ttlMs|time to live} in milliseconds.
+ *
+ * @param ttlMs How long the cached value should be returned after its last call in milliseconds.
+ */
+export function cache(ttlMs: number) {
+	return function <T extends object, Args extends any[], R>(
+		method: (this: T, ...args: Args) => R,
+		_ctx: ClassMethodDecoratorContext<T, (this: T, ...args: Args) => R>
+	) {
+		const instanceCache = new WeakMap<object, {
+			entries: Map<string, { value: R; expiry: number }>;
+			calls: number;
+		}>();
+
+		return function (this: T, ...args: Args): R {
+			const now = Date.now();
+
+			let methodCacheState = instanceCache.get(this);
+			if (!methodCacheState) {
+				methodCacheState = {
+					entries: new Map(),
+					calls: 0,
+				};
+				instanceCache.set(this, methodCacheState);
+			}
+
+			methodCacheState.calls++;
+			if (methodCacheState.calls % CACHE_SWEEP_INTERVAL === 0 && methodCacheState.entries.size > 0) {
+				for (const [cacheKey, cacheEntry] of methodCacheState.entries) {
+					if (cacheEntry.expiry <= now) {
+						methodCacheState.entries.delete(cacheKey);
+					}
+				}
+			}
+
+			const key   = hashArgs(args);
+			const entry = methodCacheState.entries.get(key);
+			if (entry && entry.expiry > now) {
+				return entry.value;
+			}
+			if (entry) {
+				methodCacheState.entries.delete(key);
+			}
+
+			const result = method.apply(this, args);
+			if (result instanceof Promise) {
+				const wrapped = result.catch((error) => {
+					methodCacheState.entries.delete(key);
+					throw error;
+				}) as R;
+
+				methodCacheState.entries.set(key, {
+					value: wrapped,
+					expiry: now + ttlMs,
+				});
+
+				return wrapped;
+			}
+
+			methodCacheState.entries.set(key, {
+				value: result,
+				expiry: now + ttlMs,
+			});
+
+			return result;
+		};
+	};
+}
+
 function hashArgs(args: any[]): string {
+	if (args.every(a => a === null || typeof a !== 'object' && typeof a !== 'function')) {
+		return JSON.stringify(args);
+	}
+
 	const seen = new WeakMap<object, number>();
 	let counter = 0;
 
@@ -77,75 +152,4 @@ function hashArgs(args: any[]): string {
 	}
 
 	return JSON.stringify(args.map(hash));
-}
-
-/**
- * Creates a method decorator that caches the return value of the method for the specified
- * {@link ttlMs|time to live} in milliseconds.
- *
- * @param ttlMs How long the cached value should be returned after its last call in milliseconds.
- */
-export function cache(ttlMs: number) {
-	return function <T extends object, Args extends any[], R>(
-		method: (this: T, ...args: Args) => R,
-		_ctx: ClassMethodDecoratorContext<T, (this: T, ...args: Args) => R>
-	) {
-		const instanceCache = new WeakMap<object, {
-			entries: Map<string, { value: R; expiry: number }>;
-			calls: number;
-		}>();
-
-		return function (this: T, ...args: Args): R {
-			const now = Date.now();
-
-			let methodCacheState = instanceCache.get(this);
-			if (!methodCacheState) {
-				methodCacheState = {
-					entries: new Map(),
-					calls: 0,
-				};
-				instanceCache.set(this, methodCacheState);
-			}
-
-			methodCacheState.calls++;
-			if (methodCacheState.calls % CACHE_SWEEP_INTERVAL === 0 && methodCacheState.entries.size > 0) {
-				for (const [cacheKey, cacheEntry] of methodCacheState.entries) {
-					if (cacheEntry.expiry <= now) {
-						methodCacheState.entries.delete(cacheKey);
-					}
-				}
-			}
-
-			const key   = hashArgs(args);
-			const entry = methodCacheState.entries.get(key);
-			if (entry && entry.expiry > now) {
-				return entry.value;
-			}
-			if (entry) {
-				methodCacheState.entries.delete(key);
-			}
-
-			const result = method.apply(this, args);
-			if (result instanceof Promise) {
-				const wrapped = result.catch((error) => {
-					methodCacheState.entries.delete(key);
-					throw error;
-				}) as R;
-
-				methodCacheState.entries.set(key, {
-					value: wrapped,
-					expiry: now + ttlMs,
-				});
-
-				return wrapped;
-			}
-
-			methodCacheState.entries.set(key, {
-				value: result,
-				expiry: now + ttlMs,
-			});
-
-			return result;
-		};
-	};
 }
