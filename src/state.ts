@@ -85,15 +85,6 @@ export class Flag extends ResettableValue<boolean> {
 	}
 
 	/**
-	 * Set the flag value.
-	 *
-	 * @param value Value to assign.
-	 */
-	public override set(value: boolean) {
-		super.set(value);
-	}
-
-	/**
 	 * Set the flag to `true`.
 	 */
 	public setTrue() {
