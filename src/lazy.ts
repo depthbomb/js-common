@@ -31,7 +31,10 @@ export function lazyAsync<T>(factory: () => Promise<T>): () => Promise<T> {
 
 	return () => {
 		if (!promise) {
-			promise = factory();
+			promise = factory().catch((error) => {
+				promise = undefined;
+				throw error;
+			});
 		}
 
 		return promise;
