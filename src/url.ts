@@ -1,4 +1,4 @@
-import type { Arrayable } from './typing';
+import type { Nullable, Arrayable } from './typing';
 
 /**
  * Values accepted by {@link URLPath} constructors and helpers.
@@ -367,22 +367,41 @@ export class URLPath {
 	}
 
 	/**
-	 * Creates a `URLPath` from URL-like input.
+	 * Creates a `URLPath` from a URL string or URL object.
 	 *
 	 * @param input URL value to parse.
 	 * @param base Optional base URL for relative inputs.
+	 * @returns `URLPath` instance.
 	 */
 	public static from(input: URLLike, base?: URLLike): URLPath {
 		return new URLPath(input, base);
 	}
 
 	/**
+	 * @deprecated Use `URLPath.from()` instead.
+	 *
 	 * Parses an absolute URL string.
 	 *
 	 * @param input URL string to parse.
 	 */
 	public static parse(input: string): URLPath {
-		return new URLPath(input);
+		console.warn('[DEPRECATED] URLPath.parse() is deprecated. Use URLPath.from() instead.');
+		return URLPath.from(input);
+	}
+
+	/**
+	 * Tries to create a `URLPath` from a URL string or object.
+	 *
+	 * @param input URL value to parse.
+	 * @param base Optional base URL for relative inputs.
+	 * @returns `URLPath` instance or `null` if parsing fails.
+	 */
+	public static tryFrom(input: URLLike, base?: URLLike): Nullable<URLPath> {
+		try {
+			return new URLPath(input, base);
+		} catch {
+			return null;
+		}
 	}
 
 	private appendQueryValue(searchParams: URLSearchParams, key: string, value: Arrayable<QueryValue>) {
