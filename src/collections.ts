@@ -99,8 +99,10 @@ export class Queue<T> {
 	 *
 	 * @returns An iterator for the items in the queue
 	 */
-	public [Symbol.iterator](): Iterator<T> {
-		return this.toArray()[Symbol.iterator]();
+	public *[Symbol.iterator](): Iterator<T> {
+		for (let i = this.#head; i < this.#items.length; i++) {
+			yield this.#items[i]!;
+		}
 	}
 
 	/**
