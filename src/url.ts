@@ -262,18 +262,10 @@ export class URLPath {
 	 * Removes query keys whose values are entirely empty strings.
 	 */
 	public withoutEmptyQuery(): URLPath {
-		const url    = new URL(this.#url.toString());
-		const visited = new Set<string>();
-
-		for (const key of url.searchParams.keys()) {
-			if (visited.has(key)) {
-				continue;
-			}
-
-			visited.add(key);
-
-			const values = url.searchParams.getAll(key);
-			if (values.every(value => value === '')) {
+		const url  = new URL(this.#url.toString());
+		const keys = [...new Set(url.searchParams.keys())];
+		for (const key of keys) {
+			if (url.searchParams.getAll(key).every(v => v === '')) {
 				url.searchParams.delete(key);
 			}
 		}
