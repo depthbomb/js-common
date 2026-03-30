@@ -108,10 +108,10 @@ export async function pool<T>(tasks: Array<() => Awaitable<T>>, options: IConcur
  * @param mapper Mapping function.
  * @param options Concurrency options.
  */
-export async function pMap<T, U>(values: Iterable<T>, mapper: (value: T, index: number) => Awaitable<U>, options: IConcurrencyOptions = {}): Promise<U[]> {
+export async function pMap<T, U>(values: Iterable<T> | AsyncIterable<T>, mapper: (value: T, index: number) => Awaitable<U>, options: IConcurrencyOptions = {}): Promise<U[]> {
 	const tasks = [] as Array<() => Awaitable<U>>;
 	let index = 0;
-	for (const value of values) {
+	for await (const value of values) {
 		const currentIndex = index++;
 		tasks.push(() => mapper(value, currentIndex));
 	}
