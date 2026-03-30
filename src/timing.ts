@@ -90,12 +90,7 @@ export function abortAfter(ms: number): AbortSignal {
 		throw new Error('ms must be a finite number >= 0');
 	}
 
-	const controller = new AbortController();
-	const timeoutId  = setTimeout(() => controller.abort(), ms);
-
-	controller.signal.addEventListener('abort', () => clearTimeout(timeoutId), { once: true });
-
-	return controller.signal;
+	return AbortSignal.timeout(ms);
 }
 
 /**
