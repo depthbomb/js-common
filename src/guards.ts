@@ -81,9 +81,16 @@ export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
  * Returns `true` when `value` is an ES class constructor.
  *
  * @param value Value to check.
+ *
+ * @remarks
+ * May be unreliable in minified environments.
  */
 export function isClass<T = unknown>(value: unknown): value is Class<T> {
-	return isFunction(value) && value.toString().startsWith('class');
+	if (!isFunction(value)) {
+		return false;
+	}
+
+	return Function.prototype.toString.call(value).startsWith('class');
 }
 
 /**
