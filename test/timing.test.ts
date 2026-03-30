@@ -172,11 +172,14 @@ describe('cancellation helpers', () => {
 	});
 
 	it('abortAfter aborts after the provided timeout', async () => {
-		vi.useFakeTimers();
+		vi.useRealTimers();
+
 		const signal = abortAfter(10);
 
 		expect(signal.aborted).toBe(false);
-		await vi.advanceTimersByTimeAsync(10);
+
+		await new Promise(r => setTimeout(r, 10));
+
 		expect(signal.aborted).toBe(true);
 	});
 
