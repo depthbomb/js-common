@@ -31,6 +31,10 @@ export function randomInt(min: number, max: number): number {
 
 	validateBounds(min, max);
 
+	if (max === Number.MAX_SAFE_INTEGER) {
+		throw new Error('max must be < Number.MAX_SAFE_INTEGER');
+	}
+
 	return Math.floor(randomFloat(min, max + 1));
 }
 
