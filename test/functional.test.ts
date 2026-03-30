@@ -1,5 +1,5 @@
-import { it, expect, describe } from 'vitest';
-import { once, pipe } from '../dist/functional.mjs';
+import { it, vi, expect, describe } from 'vitest';
+import { once, pipe, deprecate } from '../dist/functional.mjs';
 
 describe('once', () => {
 	it('invokes the wrapped function only once', () => {
@@ -63,5 +63,75 @@ describe('pipe', () => {
 
 		expect(result).toBe(6);
 		expect(spy).toEqual([1, 3]);
+	});
+});
+
+describe('deprecate', () => {
+	it('calls the original function and returns its value', () => {
+		const fn = (x: number, y: number) => x + y;
+		const wrapped = deprecate(fn);
+
+		expect(wrapped(2, 3)).toBe(5);
+		expect(wrapped(10, 20)).toBe(30);
+	});
+
+	it('logs a console warning when called', () => {
+		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
+		const fn = () => 'ok';
+		const wrapped = deprecate(fn);
+
+		wrapped();
+		expect(warnSpy).toHaveBeenCalled();
+		expect(warnSpy.mock.calls[0][0]).toContain('[DEPRECATED]');
+		warnSpy.mockRestore();
+	});
+
+	it('includes the deprecated function name and options in the warning', () => {
+		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
+
+		const fn = function oldFn() { return 42; };
+		const wrapped = deprecate(fn, {
+			deprecatedName: 'oldFn',
+			replacementName: 'newFn',
+			deprecatedSince: 'v1.0',
+			removedIn: 'v2.0',
+		});
+
+		wrapped();
+
+		const message = warnSpy.mock.calls[0][0];
+		expect(message).toContain('oldFn is deprecated');
+		expect(message).toContain('since v1.0');
+		expect(message).toContain('will be removed in v2.0');
+		expect(message).toContain('Use newFn instead.');
+
+		warnSpy.mockRestore();
+	});
+
+	it('works with anonymous functions', () => {
+		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
+
+		const wrapped = deprecate(() => 123);
+		wrapped();
+
+		const message = warnSpy.mock.calls[0][0];
+		expect(message).toContain('Anonymous function is deprecated');
+		warnSpy.mockRestore();
+	});
+
+	it('passes arguments correctly to the original function', () => {
+		const fn = vi.fn((a: number, b: number) => a * b);
+		const wrapped = deprecate(fn);
+
+		expect(wrapped(3, 4)).toBe(12);
+		expect(fn).toHaveBeenCalledWith(3, 4);
+	});
+
+	it('returns the same value on multiple calls', () => {
+		const fn = (x: string) => x.toUpperCase();
+		const wrapped = deprecate(fn);
+
+		expect(wrapped('hello')).toBe('HELLO');
+		expect(wrapped('world')).toBe('WORLD');
 	});
 });
