@@ -1,5 +1,7 @@
+type AnyFunction = (...args: never[]) => unknown;
+
 const CACHE_SWEEP_INTERVAL = 64;
-const FUNCTION_HASH_IDS    = new WeakMap<Function, number>();
+const FUNCTION_HASH_IDS    = new WeakMap<AnyFunction, number>();
 
 let functionHashCounter = 0;
 

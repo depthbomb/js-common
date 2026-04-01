@@ -310,7 +310,6 @@ export class URLPath {
 		return new URLPath(url);
 	}
 
-	// eslint-disable-next-line no-undef
 	/**
 	 * Calls global `fetch` with this URL as input.
 	 *

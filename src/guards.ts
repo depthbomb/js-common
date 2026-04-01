@@ -59,7 +59,7 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
  *
  * @param value Value to check.
  */
-export function isFunction(value: unknown): value is Function {
+export function isFunction(value: unknown): value is (...args: never[]) => unknown {
 	return typeof value === 'function';
 }
 

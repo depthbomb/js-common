@@ -35,7 +35,7 @@ export default defineConfig([globalIgnores(["**/dist", "**/node_modules"]), {
 	rules: {
 		eqeqeq: "error",
 		"eol-last": "warn",
-		"no-undef": "warn",
+		"no-undef": "off",
 		"no-empty": "warn",
 		"dot-notation": "error",
 		"no-useless-escape": "off",

@@ -240,14 +240,19 @@ if (isNumber(maybeCount)) {
 
 ### `typing`
 
-Shared type aliases and type-oriented helpers such as `Awaitable`, `Maybe`, `Nullable`, `Result`, `cast`, `assume`, `typedEntries`, `ok`, `err`, `isOk`, `mapOk`, `mapErr`, and `tryCatchAsync`.
+Shared type aliases and type-oriented helpers such as `Awaitable`, `Maybe`, `Nullable`, `cast`, `assume`, and `typedEntries`.
+
+Result helpers live in the `result` module. The legacy `typing` re-exports for `ok`, `err`, `isOk`, `mapOk`, `mapErr`, `tryCatch`, and `tryCatchAsync` are deprecated and scheduled for removal in `3.0.0`.
 
 ```ts
 import {
 	cast, assume, typedEntries,
-	ok, err, isOk, mapOk, mapErr, tryCatchAsync,
-	type Awaitable, type Maybe, type Result
+	type Awaitable, type Maybe, type Nullable
 } from '@depthbomb/common/typing';
+import {
+	ok, err, isOk, mapOk, mapErr, tryCatchAsync,
+	type Result
+} from '@depthbomb/common/result';
 
 const v = cast<object, { id: string }>({ id: 'a' });
 
