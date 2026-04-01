@@ -14,13 +14,23 @@ export type {
 	Arrayable,
 	Awaitable,
 	AwaitableFn,
+	Brand,
 	Class,
 	DeepPartial,
 	DeepReadonly,
 	Fn,
+	JsonArray,
+	JsonObject,
+	JsonPrimitive,
+	JsonValue,
 	Maybe,
+	NonEmptyArray,
 	NonNullableValues,
 	Nullable,
-	Prettify
+	OptionalKeys,
+	Prettify,
+	Primitive,
+	RequiredKeys,
+	ValueOf
 } from './typing';
 export * from './url';

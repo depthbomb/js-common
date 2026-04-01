@@ -26,6 +26,10 @@ export type Nullable<T> = T | null;
  */
 export type Arrayable<T> = T | Array<T>;
 /**
+ * Union of all value types from object `T`.
+ */
+export type ValueOf<T> = T[keyof T];
+/**
  * Flattens mapped/intersection display in editor tooltips.
  */
 export type Prettify<T> = { [K in keyof T]: T[K] } & {};
@@ -41,6 +45,38 @@ export type AwaitableFn<Return = void, Args extends unknown[] = unknown[]> = (..
  * Class constructor type.
  */
 export type Class<T, Args extends unknown[] = any[]> = new (...args: Args) => T;
+/**
+ * A tuple-based array type with at least one item.
+ */
+export type NonEmptyArray<T> = [T, ...T[]];
+/**
+ * Branded nominal type built from a structural base type.
+ */
+export type Brand<T, Tag extends string> = T & {
+	readonly __brand: Tag;
+};
+/**
+ * Primitive JavaScript values.
+ */
+export type Primitive = string | number | bigint | boolean | symbol | null | undefined;
+/**
+ * JSON primitive values.
+ */
+export type JsonPrimitive = string | number | boolean | null;
+/**
+ * JSON arrays.
+ */
+export type JsonArray = JsonValue[];
+/**
+ * JSON objects.
+ */
+export type JsonObject = {
+	[key: string]: JsonValue;
+};
+/**
+ * Any JSON-serializable value.
+ */
+export type JsonValue = JsonPrimitive | JsonArray | JsonObject;
 /**
  * Ensures all properties of an object type are non-nullable.
  *
@@ -68,6 +104,21 @@ export type DeepReadonly<T> = T extends (infer U)[] ? ReadonlyArray<DeepReadonly
  * @typeParam T - Type to make deeply partial.
  */
 export type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
+/**
+ * Keys of `T` whose properties are optional.
+ *
+ * @typeParam T - Object type to inspect.
+ */
+export type OptionalKeys<T extends object> = {
+	// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+	[K in keyof T]-?: {} extends Pick<T, K> ? K : never;
+}[keyof T];
+/**
+ * Keys of `T` whose properties are required.
+ *
+ * @typeParam T - Object type to inspect.
+ */
+export type RequiredKeys<T extends object> = Exclude<keyof T, OptionalKeys<T>>;
 
 /**
  * Recasts a value to a wider target type without runtime transformation.

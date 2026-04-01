@@ -263,14 +263,15 @@ if (isNumber(maybeCount)) {
 
 ### `typing`
 
-Shared type aliases and type-oriented helpers such as `Awaitable`, `Maybe`, `Nullable`, `cast`, `assume`, and `typedEntries`.
+Shared type aliases and type-oriented helpers such as `Awaitable`, `Maybe`, `Nullable`, `ValueOf`, `NonEmptyArray`, `Brand`, `OptionalKeys`, `RequiredKeys`, JSON-related types, `cast`, `assume`, and `typedEntries`.
 
 Result helpers live in the `result` module. The legacy `typing` re-exports for `ok`, `err`, `isOk`, `mapOk`, `mapErr`, `tryCatch`, and `tryCatchAsync` are deprecated and scheduled for removal in `3.0.0`.
 
 ```ts
 import {
 	cast, assume, typedEntries,
-	type Awaitable, type Maybe, type Nullable
+	type Awaitable, type Brand, type JsonValue, type Maybe, type NonEmptyArray,
+	type Nullable, type OptionalKeys, type RequiredKeys, type ValueOf
 } from '@depthbomb/common/typing';
 import {
 	ok, err, isOk, mapOk, mapErr, tryCatchAsync,
@@ -286,6 +287,12 @@ const entries = typedEntries({ a: 1, b: 2 }); // typed key/value tuples
 
 const maybeName: Maybe<string> = undefined;
 const task: Awaitable<number> = Promise.resolve(1);
+type Status = ValueOf<{ ready: 'ready'; done: 'done' }>;
+type Tags = NonEmptyArray<string>;
+type UserId = Brand<string, 'UserId'>;
+type OptionalUserKeys = OptionalKeys<{ id: string; name?: string }>;
+type RequiredUserKeys = RequiredKeys<{ id: string; name?: string }>;
+const payload: JsonValue = { tags: ['a', 'b'], active: true };
 
 const initial: Result<number, string> = ok(2);
 const doubled = mapOk(initial, (value) => value * 2);
