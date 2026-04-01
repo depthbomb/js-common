@@ -224,12 +224,35 @@ const weighted = pickWeighted([
 Runtime type guards for common narrowing patterns.
 
 ```ts
-import { isRecord, isNonEmptyString, isNumber, isDateLike } from '@depthbomb/common/guards';
+import {
+	has,
+	isArrayOf,
+	isDateLike,
+	isNonEmptyString,
+	isNumber,
+	isOneOf,
+	isString
+} from '@depthbomb/common/guards';
 
-const input: unknown = { name: 'Ada', createdAt: '2026-01-01' };
+const input: unknown = {
+	name: 'Ada',
+	createdAt: '2026-01-01',
+	roles: ['admin', 'editor'],
+	status: 'active'
+};
 
-if (isRecord(input) && isNonEmptyString(input.name) && isDateLike(input.createdAt)) {
-	// narrowed shape at runtime
+if (has.shape<{
+	name: string;
+	createdAt: string;
+	roles: string[];
+	status: 'active' | 'disabled';
+}>(input, {
+	name: isNonEmptyString,
+	createdAt: isDateLike,
+	roles: (value): value is string[] => isArrayOf(value, isString),
+	status: (value): value is 'active' | 'disabled' => isOneOf(value, ['active', 'disabled'] as const)
+})) {
+	console.log(input.roles.join(', '));
 }
 
 const maybeCount: unknown = 42;

@@ -1,13 +1,19 @@
 import { it, expect, describe } from 'vitest';
 import {
+	has,
 	is,
+	hasKey,
+	hasKeys,
+	hasShape,
 	isNull,
+	isOneOf,
 	isClass,
 	isFalsy,
 	isNumber,
 	isRecord,
 	isString,
 	isTruthy,
+	isArrayOf,
 	isBoolean,
 	isPromise,
 	isDateLike,
@@ -32,6 +38,13 @@ describe('guards', () => {
 		expect(isRecord([])).toBe(false);
 		expect(isRecord(null)).toBe(false);
 		expect(isRecord('x')).toBe(false);
+	});
+
+	it('isArrayOf validates every array item with the provided guard', () => {
+		expect(isArrayOf(['a', 'b'], isString)).toBe(true);
+		expect(isArrayOf([1, 2, 3], isNumber)).toBe(true);
+		expect(isArrayOf(['a', 1], isString)).toBe(false);
+		expect(isArrayOf('not-an-array', isString)).toBe(false);
 	});
 
 	it('isNonEmptyString matches only strings with length > 0', () => {
@@ -95,6 +108,36 @@ describe('guards', () => {
 		expect(isBoolean(1)).toBe(false);
 	});
 
+	it('hasKey and hasKeys validate property presence', () => {
+		const value = { id: 1, name: 'Ada' };
+
+		expect(hasKey(value, 'id')).toBe(true);
+		expect(hasKey(value, 'missing')).toBe(false);
+		expect(hasKeys(value, 'id', 'name')).toBe(true);
+		expect(hasKeys(value, 'id', 'missing')).toBe(false);
+		expect(hasKeys(null, 'id')).toBe(false);
+	});
+
+	it('hasShape validates object fields with per-key guards', () => {
+		const userShape = {
+			id: isNumber,
+			name: isNonEmptyString,
+			tags: (value: unknown): value is string[] => isArrayOf(value, isString)
+		};
+
+		expect(hasShape({ id: 1, name: 'Ada', tags: ['admin'] }, userShape)).toBe(true);
+		expect(hasShape({ id: '1', name: 'Ada', tags: ['admin'] }, userShape)).toBe(false);
+		expect(hasShape({ id: 1, name: '', tags: ['admin'] }, userShape)).toBe(false);
+		expect(hasShape({ id: 1, name: 'Ada' }, userShape)).toBe(false);
+		expect(hasShape([], userShape)).toBe(false);
+	});
+
+	it('isOneOf matches only values from the provided literal set', () => {
+		expect(isOneOf('open', ['open', 'closed'] as const)).toBe(true);
+		expect(isOneOf('pending', ['open', 'closed'] as const)).toBe(false);
+		expect(isOneOf(Number.NaN, [Number.NaN, 1] as const)).toBe(true);
+	});
+
 	it('isTruthy and isFalsy align with JavaScript truthiness', () => {
 		expect(isTruthy('a')).toBe(true);
 		expect(isTruthy(1)).toBe(true);
@@ -127,6 +170,7 @@ describe('guards', () => {
 		expect(is.number).toBe(isNumber);
 		expect(is.positiveNumber).toBe(isPositiveNumber);
 		expect(is.record).toBe(isRecord);
+		expect(is.arrayOf).toBe(isArrayOf);
 		expect(is.function).toBe(isFunction);
 		expect(is.promise).toBe(isPromise);
 		expect(is.class).toBe(isClass);
@@ -134,8 +178,15 @@ describe('guards', () => {
 		expect(is.undefined).toBe(isUndefined);
 		expect(is.nullOrUndefined).toBe(isNullOrUndefined);
 		expect(is.boolean).toBe(isBoolean);
+		expect(is.oneOf).toBe(isOneOf);
 		expect(is.truthy).toBe(isTruthy);
 		expect(is.falsy).toBe(isFalsy);
 		expect(is.dateLike).toBe(isDateLike);
+	});
+
+	it('has object exposes aliases for has* guard helpers', () => {
+		expect(has.key).toBe(hasKey);
+		expect(has.keys).toBe(hasKeys);
+		expect(has.shape).toBe(hasShape);
 	});
 });

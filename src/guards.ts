@@ -8,6 +8,10 @@ export type Falsy = false | 0 | 0n | '' | null | undefined;
  * Inputs that can be converted into a valid date.
  */
 export type DateLike = Date | string | number;
+/**
+ * Generic runtime type guard function.
+ */
+export type Guard<T> = (value: unknown) => value is T;
 
 /**
  * Returns `true` when `value` is a string.
@@ -52,6 +56,16 @@ export function isPositiveNumber(value: unknown): value is number {
  */
 export function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+/**
+ * Returns `true` when `value` is an array whose items all satisfy `guard`.
+ *
+ * @param value Value to check.
+ * @param guard Element guard applied to every item.
+ */
+export function isArrayOf<T>(value: unknown, guard: Guard<T>): value is T[] {
+	return Array.isArray(value) && value.every(item => guard(item));
 }
 
 /**
@@ -130,6 +144,62 @@ export function isBoolean(value: unknown): value is boolean {
 }
 
 /**
+ * Returns `true` when `value` has the provided property key.
+ *
+ * @param value Value to check.
+ * @param key Property key to look for.
+ */
+export function hasKey<K extends PropertyKey>(value: unknown, key: K): value is Record<K, unknown> {
+	return (typeof value === 'object' || typeof value === 'function')
+		&& value !== null
+		&& key in value;
+}
+
+/**
+ * Returns `true` when `value` has every provided property key.
+ *
+ * @param value Value to check.
+ * @param keys Property keys to require.
+ */
+export function hasKeys<K extends PropertyKey>(value: unknown, ...keys: K[]): value is Record<K, unknown> {
+	return keys.every(key => hasKey(value, key));
+}
+
+/**
+ * Returns `true` when `value` matches a field-to-guard object shape.
+ *
+ * @param value Value to check.
+ * @param shape Object whose values are guards for each corresponding property.
+ */
+export function hasShape<T extends Record<PropertyKey, unknown>>(
+	value: unknown,
+	shape: { [K in keyof T]: Guard<T[K]> }
+): value is T {
+	if (!isRecord(value)) {
+		return false;
+	}
+
+	for (const key of Reflect.ownKeys(shape) as Array<keyof T>) {
+		const guard = shape[key];
+		if (!hasKey(value, key) || !guard(value[key])) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/**
+ * Returns `true` when `value` is strictly equal to one of the provided literals.
+ *
+ * @param value Value to check.
+ * @param options Allowed literal values.
+ */
+export function isOneOf<const T extends readonly unknown[]>(value: unknown, options: T): value is T[number] {
+	return options.some(option => Object.is(option, value));
+}
+
+/**
  * Returns `true` when `value` is truthy.
  *
  * @param value Value to check.
@@ -177,6 +247,7 @@ export const is = {
 	number: isNumber,
 	positiveNumber: isPositiveNumber,
 	record: isRecord,
+	arrayOf: isArrayOf,
 	function: isFunction,
 	promise: isPromise,
 	class: isClass,
@@ -184,9 +255,19 @@ export const is = {
 	undefined: isUndefined,
 	nullOrUndefined: isNullOrUndefined,
 	boolean: isBoolean,
+	oneOf: isOneOf,
 	truthy: isTruthy,
 	falsy: isFalsy,
 	dateLike: isDateLike
+};
+
+/**
+ * Namespaced aliases for all guard helpers.
+ */
+export const has = {
+	key: hasKey,
+	keys: hasKeys,
+	shape: hasShape,
 };
 
 function isValidDate(date: Date) {
