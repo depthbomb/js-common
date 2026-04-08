@@ -118,6 +118,8 @@ Timing and timeout flow-control helpers.
 import {
 	timeout,
 	rejectionTimeout,
+	formatDuration,
+	parseDuration,
 	pollUntil,
 	withTimeout,
 	retry,
@@ -158,6 +160,25 @@ await withAbort(fetch('https://example.com/slow'), signal);
 const parent = new AbortController();
 const child = abortAfter(500);
 const combined = raceSignals(parent.signal, child);
+
+const duration = parseDuration('2 hours, plus 30m, ignored text, and another 15 seconds');
+
+duration.milliseconds; // fixed conversion: 9_015_000
+duration.toHumanString({ precision: 2 }); // "2 hours 30 minutes"
+duration.fromNow(); // Date relative to now
+duration.from(new Date('2026-04-08T12:00:00.000Z')); // 2026-04-08T14:30:15.000Z
+
+const oneMonth = parseDuration('1mo');
+oneMonth.toMilliseconds(); // fixed conversion: 30 days
+oneMonth.toMilliseconds(new Date('2024-01-31T00:00:00.000Z')); // anchored conversion: 29 days
+
+formatDuration(1_000); // "1 second"
+formatDuration(9_015_000, { precision: 2 }); // "2 hours 30 minutes"
+formatDuration(2 * 365 * 24 * 60 * 60 * 1_000, {
+	labels: {
+		years: { singular: 'año', plural: 'años' }
+	}
+}); // "2 años"
 ```
 
 ### `promise`
