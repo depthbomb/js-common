@@ -1,4 +1,5 @@
-import type { Maybe } from './typing';
+import { deprecate } from './functional';
+import { resettableLazy as _resettableLazy, resettableLazyAsync as _resettableLazyAsync } from './atomic';
 
 /**
  * Holds a mutable value and remembers its initial value so it can be restored.
@@ -107,52 +108,23 @@ export class Flag extends ResettableValue<boolean> {
 }
 
 /**
- * Creates a resettable lazy value accessor.
- *
- * @param factory Factory used to create the value.
+ * @deprecated
+ * Import from the `atomic` module instead.
  */
-export function resettableLazy<T>(factory: () => T) {
-	let cached: Maybe<T>;
-	let initialized = false;
-
-	function get(): T {
-		if (!initialized) {
-			cached = factory();
-			initialized = true;
-		}
-		return cached!;
-	}
-
-	function reset() {
-		initialized = false;
-		cached = undefined;
-	}
-
-	return { get, reset };
-}
+export const resettableLazy = deprecate(_resettableLazy, {
+	deprecatedName: 'state#resettableLazy',
+	replacementName: 'atomic#resettableLazy',
+	deprecatedSince: '2.5.0',
+	removedIn: '3.0.0'
+});
 
 /**
- * Creates a resettable async lazy accessor.
- *
- * @param factory Async factory used to create the value.
+ * @deprecated
+ * Import from the `atomic` module instead.
  */
-export function resettableLazyAsync<T>(factory: () => Promise<T>) {
-	let promise: Maybe<Promise<T>>;
-
-	function get() {
-		if (!promise) {
-			promise = factory().catch((error) => {
-				promise = undefined;
-				throw error;
-			});
-		}
-
-		return promise;
-	}
-
-	function reset() {
-		promise = undefined;
-	}
-
-	return { get, reset };
-}
+export const resettableLazyAsync = deprecate(_resettableLazyAsync, {
+	deprecatedName: 'state#resettableLazyAsync',
+	replacementName: 'atomic#resettableLazyAsync',
+	deprecatedSince: '2.5.0',
+	removedIn: '3.0.0'
+});

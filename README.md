@@ -8,6 +8,108 @@ A set of common utilities for TypeScript/JavaScript that I use in my projects.
 
 ## Modules
 
+### `atomic`
+
+Atomic state-transition helpers for one-time execution, lazy initialization, shared mutable cells, and async coordination primitives.
+
+```ts
+import {
+	AtomicValue,
+	AsyncEvent,
+	Barrier,
+	Latch,
+	once,
+	onceAsync,
+	Mutex,
+	ReadWriteLock,
+	Semaphore,
+	compareAndSet,
+	deferred,
+	lazy,
+	lazyAsync,
+	memoizeAsync,
+	resettableLazy,
+	resettableLazyAsync,
+	singleFlight,
+	swap
+} from '@depthbomb/common/atomic';
+
+const init = once(() => ({ startedAt: Date.now() }));
+const a = init();
+const b = init();
+
+const getConfig = lazy(() => ({ env: 'prod' }));
+const config = getConfig();
+
+const getToken = lazyAsync(async () => 'token');
+const token = await getToken();
+
+const counter = resettableLazy(() => Math.random());
+counter.get();
+counter.reset();
+
+const tokenCache = resettableLazyAsync(async () => 'token');
+await tokenCache.get();
+tokenCache.reset();
+
+const mutex = new Mutex();
+{
+	await using lease = await mutex.acquire();
+	// protected work
+}
+
+await mutex.runExclusive(async () => {
+	// protected async work
+});
+
+const semaphore = new Semaphore(2);
+await semaphore.runExclusive(async () => {
+	// up to two concurrent callers
+});
+
+const lock = new ReadWriteLock();
+await lock.runRead(async () => {});
+await lock.runWrite(async () => {});
+
+const gate = new Latch();
+setTimeout(() => gate.open(), 100);
+await gate.wait();
+
+const event = new AsyncEvent();
+setTimeout(() => event.set(), 100);
+await event.wait();
+event.reset();
+
+const ready = deferred<string>();
+setTimeout(() => ready.resolve('ok'), 100);
+await ready.promise;
+
+const barrier = new Barrier(2);
+await Promise.all([barrier.wait(), barrier.wait()]);
+
+const initAsync = onceAsync(async () => ({ connected: true }));
+await initAsync();
+await initAsync();
+
+const fetchUser = singleFlight(async (id: string) => {
+	const response = await fetch(`/api/users/${id}`);
+	return response.json();
+}, (id) => id);
+
+const fetchProfile = memoizeAsync(async (id: string) => {
+	const response = await fetch(`/api/profiles/${id}`);
+	return response.json();
+}, (id) => id);
+
+const cell = new AtomicValue(1);
+cell.compareAndSet(1, 2);
+const previous = cell.swap(3);
+
+const box = { value: 'a' };
+compareAndSet(box, 'a', 'b');
+swap(box, 'c');
+```
+
 ### `timing`
 
 Timing and timeout flow-control helpers.
@@ -114,10 +216,13 @@ s.getUser('1'); // cached for 1 second
 
 ### `state`
 
-State primitives: `ResettableValue`, `Flag`, `resettableLazy`, and `resettableLazyAsync`.
+State primitives: `ResettableValue` and `Flag`.
+
+`resettableLazy` and `resettableLazyAsync` remain available here as legacy exports, but new code should import them from `atomic`.
 
 ```ts
-import { Flag, ResettableValue, resettableLazy, resettableLazyAsync } from '@depthbomb/common/state';
+import { Flag, ResettableValue } from '@depthbomb/common/state';
+import { resettableLazy, resettableLazyAsync } from '@depthbomb/common/atomic';
 
 const flag = new Flag();
 flag.setTrue();
@@ -143,10 +248,12 @@ tokenCache.reset();
 
 ### `functional`
 
-General function utilities. Currently includes `once`, which ensures a function runs only on its first invocation and then reuses the same result.
+General function utilities such as `pipe` and `deprecate`.
+
+`once` remains available here as a legacy export, but new code should import it from `atomic`.
 
 ```ts
-import { once } from '@depthbomb/common/functional';
+import { once } from '@depthbomb/common/atomic';
 
 const init = once(() => ({ startedAt: Date.now() }));
 
@@ -157,10 +264,12 @@ console.log(a === b); // true
 
 ### `lazy`
 
-Lazy initialization utilities for sync and async values.
+Legacy lazy initialization entrypoint.
+
+`lazy` and `lazyAsync` remain available here as legacy exports, but new code should import them from `atomic`.
 
 ```ts
-import { lazy, lazyAsync } from '@depthbomb/common/lazy';
+import { lazy, lazyAsync } from '@depthbomb/common/atomic';
 
 const getConfig = lazy(() => ({ env: 'prod' }));
 const config = getConfig(); // factory runs once

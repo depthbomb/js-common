@@ -1,42 +1,24 @@
-import type { Maybe } from './typing';
+import { deprecate } from './functional';
+import { lazy as _lazy, lazyAsync as _lazyAsync } from './atomic';
 
 /**
- * Creates a getter that computes its value once and then returns the cached result.
- *
- * @param factory Function used to create the value.
- * @returns A zero-argument getter for the lazily-created value.
+ * @deprecated
+ * Import from the `atomic` module instead.
  */
-export function lazy<T>(factory: () => T): () => T {
-	let cached: Maybe<T>;
-	let initialized = false;
-
-	return () => {
-		if (!initialized) {
-			cached = factory();
-			initialized = true;
-		}
-
-		return cached!;
-	};
-}
+export const lazy = deprecate(_lazy, {
+	deprecatedName: 'lazy#lazy',
+	replacementName: 'atomic#lazy',
+	deprecatedSince: '2.5.0',
+	removedIn: '3.0.0'
+});
 
 /**
- * Creates a getter that runs an async factory once and reuses the same promise.
- *
- * @param factory Async function used to create the value.
- * @returns A zero-argument getter returning the cached promise.
+ * @deprecated
+ * Import from the `atomic` module instead.
  */
-export function lazyAsync<T>(factory: () => Promise<T>): () => Promise<T> {
-	let promise: Maybe<Promise<T>>;
-
-	return () => {
-		if (!promise) {
-			promise = factory().catch((error) => {
-				promise = undefined;
-				throw error;
-			});
-		}
-
-		return promise;
-	};
-}
+export const lazyAsync = deprecate(_lazyAsync, {
+	deprecatedName: 'lazy#lazyAsync',
+	replacementName: 'atomic#lazyAsync',
+	deprecatedSince: '2.5.0',
+	removedIn: '3.0.0'
+});

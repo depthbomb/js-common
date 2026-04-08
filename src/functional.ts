@@ -1,4 +1,5 @@
 import { Fn } from './typing';
+import { once as _once } from './atomic';
 
 interface IDeprecateOptions {
 	deprecatedName?: string;
@@ -8,24 +9,15 @@ interface IDeprecateOptions {
 }
 
 /**
- * Creates a function that calls the given function only once.
- *
- * @param fn Function to be called only once
- * @returns A new function that calls the original function only once
+ * @deprecated
+ * Import from the `atomic` module instead.
  */
-export function once<T extends Fn<any, any>>(fn: T): T {
-	let called = false;
-	let result: ReturnType<T>;
-
-	return ((...args: Parameters<T>) => {
-		if (!called) {
-			result = fn(...args);
-			called = true;
-		}
-
-		return result;
-	}) as T;
-}
+export const once = deprecate(_once, {
+	deprecatedName: 'functional#once',
+	replacementName: 'atomic#once',
+	deprecatedSince: '2.5.0',
+	removedIn: '3.0.0'
+});
 
 /**
  * Pipes a value through a sequence of functions, passing the result of each function to the next.

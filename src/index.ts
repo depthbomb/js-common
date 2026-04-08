@@ -1,13 +1,13 @@
+export * from './atomic';
 export * from './collections';
 export * from './decorators';
-export * from './functional';
+export { deprecate, pipe } from './functional';
 export * from './guards';
-export * from './lazy';
 export * from './number';
 export * from './promise';
 export * from './random';
 export * from './result';
-export * from './state';
+export { Flag, ResettableValue } from './state';
 export * from './timing';
 export { assume, cast, typedEntries } from './typing';
 export type {
