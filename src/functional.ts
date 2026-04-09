@@ -1,5 +1,4 @@
 import { Fn } from './typing';
-import { once as _once } from './atomic';
 
 interface IDeprecateOptions {
 	deprecatedName?: string;
@@ -7,17 +6,6 @@ interface IDeprecateOptions {
 	deprecatedSince?: string;
 	removedIn?: string;
 }
-
-/**
- * @deprecated
- * Import from the `atomic` module instead.
- */
-export const once = deprecate(_once, {
-	deprecatedName: 'functional.once',
-	replacementName: 'atomic.once',
-	deprecatedSince: '2.5.0',
-	removedIn: '3.0.0'
-});
 
 /**
  * Pipes a value through a sequence of functions, passing the result of each function to the next.

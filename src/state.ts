@@ -1,6 +1,3 @@
-import { deprecate } from './functional';
-import { resettableLazy as _resettableLazy, resettableLazyAsync as _resettableLazyAsync } from './atomic';
-
 /**
  * Holds a mutable value and remembers its initial value so it can be restored.
  *
@@ -106,25 +103,3 @@ export class Flag extends ResettableValue<boolean> {
 		this.value = !this.value;
 	}
 }
-
-/**
- * @deprecated
- * Import from the `atomic` module instead.
- */
-export const resettableLazy = deprecate(_resettableLazy, {
-	deprecatedName: 'state.resettableLazy',
-	replacementName: 'atomic.resettableLazy',
-	deprecatedSince: '2.5.0',
-	removedIn: '3.0.0'
-});
-
-/**
- * @deprecated
- * Import from the `atomic` module instead.
- */
-export const resettableLazyAsync = deprecate(_resettableLazyAsync, {
-	deprecatedName: 'state.resettableLazyAsync',
-	replacementName: 'atomic.resettableLazyAsync',
-	deprecatedSince: '2.5.0',
-	removedIn: '3.0.0'
-});
