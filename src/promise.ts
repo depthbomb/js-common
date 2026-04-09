@@ -109,14 +109,29 @@ export async function pool<T>(tasks: Array<() => Awaitable<T>>, options: IConcur
  * @param options Concurrency options.
  */
 export async function pMap<T, U>(values: Iterable<T> | AsyncIterable<T>, mapper: (value: T, index: number) => Awaitable<U>, options: IConcurrencyOptions = {}): Promise<U[]> {
-	const tasks = [] as Array<() => Awaitable<U>>;
+	const concurrency = validateConcurrency(options.concurrency ?? Number.MAX_SAFE_INTEGER);
+	const pending = new Set<Promise<void>>();
+	const results = [] as U[];
 	let index = 0;
+
 	for await (const value of values) {
 		const currentIndex = index++;
-		tasks.push(() => mapper(value, currentIndex));
+		const task = (async () => {
+			results[currentIndex] = await mapper(value, currentIndex);
+		})().finally(() => {
+			pending.delete(task);
+		});
+
+		pending.add(task);
+
+		if (pending.size >= concurrency) {
+			await Promise.race(pending);
+		}
 	}
 
-	return pool(tasks, options);
+	await Promise.all(pending);
+
+	return results;
 }
 
 function validateConcurrency(concurrency: number) {

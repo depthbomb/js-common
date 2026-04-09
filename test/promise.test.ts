@@ -52,6 +52,39 @@ describe('promise utilities', () => {
 		expect(maxInFlight).toBeLessThanOrEqual(2);
 	});
 
+	it('pMap does not eagerly drain async iterables', async () => {
+		const events = [] as string[];
+
+		async function* values() {
+			events.push('yield:1');
+			yield 1;
+			events.push('yield:2');
+			yield 2;
+			events.push('yield:3');
+			yield 3;
+		}
+
+		const results = await pMap(values(), async (value) => {
+			events.push(`start:${value}`);
+			await timeout(2);
+			events.push(`end:${value}`);
+			return value * 2;
+		}, { concurrency: 1 });
+
+		expect(results).toEqual([2, 4, 6]);
+		expect(events).toEqual([
+			'yield:1',
+			'start:1',
+			'end:1',
+			'yield:2',
+			'start:2',
+			'end:2',
+			'yield:3',
+			'start:3',
+			'end:3',
+		]);
+	});
+
 	it('validates concurrency options', async () => {
 		await expect(pool([async () => 1], { concurrency: 0 })).rejects.toThrow('concurrency must be an integer >= 1');
 		await expect(pMap([1], async (v) => v, { concurrency: -1 })).rejects.toThrow('concurrency must be an integer >= 1');
