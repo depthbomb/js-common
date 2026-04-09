@@ -112,8 +112,8 @@ export class Flag extends ResettableValue<boolean> {
  * Import from the `atomic` module instead.
  */
 export const resettableLazy = deprecate(_resettableLazy, {
-	deprecatedName: 'state#resettableLazy',
-	replacementName: 'atomic#resettableLazy',
+	deprecatedName: 'state.resettableLazy',
+	replacementName: 'atomic.resettableLazy',
 	deprecatedSince: '2.5.0',
 	removedIn: '3.0.0'
 });
@@ -123,8 +123,8 @@ export const resettableLazy = deprecate(_resettableLazy, {
  * Import from the `atomic` module instead.
  */
 export const resettableLazyAsync = deprecate(_resettableLazyAsync, {
-	deprecatedName: 'state#resettableLazyAsync',
-	replacementName: 'atomic#resettableLazyAsync',
+	deprecatedName: 'state.resettableLazyAsync',
+	replacementName: 'atomic.resettableLazyAsync',
 	deprecatedSince: '2.5.0',
 	removedIn: '3.0.0'
 });

@@ -60,23 +60,45 @@ export type Brand<T, Tag extends string> = T & {
  */
 export type Primitive = string | number | bigint | boolean | symbol | null | undefined;
 /**
+ * @deprecated
+ * Use {@link JSONPrimitive} instead.
  * JSON primitive values.
  */
 export type JsonPrimitive = string | number | boolean | null;
 /**
- * JSON arrays.
+ * JSON primitive values.
  */
-export type JsonArray = JsonValue[];
+export type JSONPrimitive = string | number | boolean | null;
 /**
- * JSON objects.
+ * @deprecated
+ * Use {@link JSONValue} instead.
+ * Any JSON-serializable value.
  */
-export type JsonObject = {
-	[key: string]: JsonValue;
-};
+export type JsonValue = JSONPrimitive | JSONArray | JSONObject;
 /**
  * Any JSON-serializable value.
  */
-export type JsonValue = JsonPrimitive | JsonArray | JsonObject;
+export type JSONValue = JSONPrimitive | JSONArray | JSONObject;
+/**
+ * @deprecated
+ * Use {@link JSONArray} instead.
+ * JSON arrays.
+ */
+export type JsonArray = JSONValue[];
+/**
+ * JSON arrays.
+ */
+export type JSONArray = JSONValue[];
+/**
+ * @deprecated
+ * Use {@link JSONObject} instead.
+ * JSON objects.
+ */
+export type JsonObject = { [key: string]: JSONValue; };
+/**
+ * JSON objects.
+ */
+export type JSONObject = { [key: string]: JSONValue; };
 /**
  * Ensures all properties of an object type are non-nullable.
  *
@@ -150,8 +172,8 @@ export function typedEntries<T extends object>(obj: T) {
  * Import from the `result` module instead.
  */
 export const ok = deprecate(_ok, {
-	deprecatedName: 'typing#ok',
-	replacementName: 'result#ok',
+	deprecatedName: 'typing.ok',
+	replacementName: 'result.ok',
 	deprecatedSince: '2.3.0',
 	removedIn: '3.0.0'
 });
@@ -161,8 +183,8 @@ export const ok = deprecate(_ok, {
  * Import from the `result` module instead.
  */
 export const err = deprecate(_err, {
-	deprecatedName: 'typing#err',
-	replacementName: 'result#err',
+	deprecatedName: 'typing.err',
+	replacementName: 'result.err',
 	deprecatedSince: '2.3.0',
 	removedIn: '3.0.0'
 });
@@ -172,8 +194,8 @@ export const err = deprecate(_err, {
  * Import from the `result` module instead.
  */
 export const isOk = deprecate(_isOk, {
-	deprecatedName: 'typing#isOk',
-	replacementName: 'result#isOk',
+	deprecatedName: 'typing.isOk',
+	replacementName: 'result.isOk',
 	deprecatedSince: '2.3.0',
 	removedIn: '3.0.0'
 });
@@ -183,8 +205,8 @@ export const isOk = deprecate(_isOk, {
  * Import from the `result` module instead.
  */
 export const mapOk = deprecate(_mapOk, {
-	deprecatedName: 'typing#mapOk',
-	replacementName: 'result#mapOk',
+	deprecatedName: 'typing.mapOk',
+	replacementName: 'result.mapOk',
 	deprecatedSince: '2.3.0',
 	removedIn: '3.0.0'
 });
@@ -194,8 +216,8 @@ export const mapOk = deprecate(_mapOk, {
  * Import from the `result` module instead.
  */
 export const mapErr = deprecate(_mapErr, {
-	deprecatedName: 'typing#mapErr',
-	replacementName: 'result#mapErr',
+	deprecatedName: 'typing.mapErr',
+	replacementName: 'result.mapErr',
 	deprecatedSince: '2.3.0',
 	removedIn: '3.0.0'
 });
@@ -205,8 +227,8 @@ export const mapErr = deprecate(_mapErr, {
  * Import from the `result` module instead.
  */
 export const tryCatch = deprecate(_tryCatch, {
-	deprecatedName: 'typing#tryCatch',
-	replacementName: 'result#tryCatch',
+	deprecatedName: 'typing.tryCatch',
+	replacementName: 'result.tryCatch',
 	deprecatedSince: '2.3.0',
 	removedIn: '3.0.0'
 });
@@ -216,8 +238,8 @@ export const tryCatch = deprecate(_tryCatch, {
  * Import from the `result` module instead.
  */
 export const tryCatchAsync = deprecate(_tryCatchAsync, {
-	deprecatedName: 'typing#tryCatchAsync',
-	replacementName: 'result#tryCatchAsync',
+	deprecatedName: 'typing.tryCatchAsync',
+	replacementName: 'result.tryCatchAsync',
 	deprecatedSince: '2.3.0',
 	removedIn: '3.0.0'
 });

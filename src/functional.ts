@@ -13,8 +13,8 @@ interface IDeprecateOptions {
  * Import from the `atomic` module instead.
  */
 export const once = deprecate(_once, {
-	deprecatedName: 'functional#once',
-	replacementName: 'atomic#once',
+	deprecatedName: 'functional.once',
+	replacementName: 'atomic.once',
 	deprecatedSince: '2.5.0',
 	removedIn: '3.0.0'
 });
@@ -24,7 +24,6 @@ export const once = deprecate(_once, {
  *
  * @param value Initial value to pass into the first function
  * @param fns Functions to apply in order
- * @returns The result of applying all functions to the initial value
  */
 export function pipe<T>(value: T, ...fns: Array<Fn<any, any>>): any {
 	return fns.reduce((v, f) => f(v), value);

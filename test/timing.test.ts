@@ -5,12 +5,12 @@ import {
 	timeout,
 	pollUntil,
 	withAbort,
-	formatDuration,
-	parseDuration,
 	abortAfter,
 	raceSignals,
 	RetryJitter,
 	withTimeout,
+	parseDuration,
+	formatDuration,
 	rejectionTimeout
 } from '../dist/timing.mjs';
 

@@ -1,6 +1,6 @@
 import { it, expect, describe } from 'vitest';
 import { cast, assume, typedEntries } from '../dist/typing.mjs';
-import type { Brand, ValueOf, JsonValue, OptionalKeys, RequiredKeys, NonEmptyArray } from '../dist/typing.mjs';
+import type { Brand, ValueOf, JSONValue, OptionalKeys, RequiredKeys, NonEmptyArray } from '../dist/typing.mjs';
 
 type Equal<A, B> =
 	(<T>() => T extends A ? 1 : 2) extends
@@ -26,7 +26,7 @@ type _Assertions = [
 
 const typeAssertions: _Assertions = [true, true, true, true, true];
 
-const typedJsonValue: JsonValue = {
+const typedJSONValue: JSONValue = {
 	ok: true,
 	items: [1, 'two', null]
 };
@@ -51,7 +51,7 @@ describe('types helpers', () => {
 
 	it('supports the new utility typing shapes at compile time', () => {
 		expect(typeAssertions).toEqual([true, true, true, true, true]);
-		expect(typedJsonValue).toEqual({
+		expect(typedJSONValue).toEqual({
 			ok: true,
 			items: [1, 'two', null]
 		});

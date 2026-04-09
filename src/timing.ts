@@ -1,3 +1,4 @@
+import { isUndefined } from './guards';
 import type { DateLike } from './guards';
 import type { Maybe, Awaitable } from './typing';
 
@@ -24,13 +25,13 @@ export interface IFormatDurationOptions {
 }
 
 const enum DurationUnit {
-	Years = 'years',
-	Months = 'months',
-	Weeks = 'weeks',
-	Days = 'days',
-	Hours = 'hours',
-	Minutes = 'minutes',
-	Seconds = 'seconds',
+	Years        = 'years',
+	Months       = 'months',
+	Weeks        = 'weeks',
+	Days         = 'days',
+	Hours        = 'hours',
+	Minutes      = 'minutes',
+	Seconds      = 'seconds',
 	Milliseconds = 'milliseconds'
 }
 
@@ -76,8 +77,8 @@ export class Duration {
 	/**
 	 * Fixed-conversion milliseconds for this duration.
 	 *
-	 * Years are treated as 365 days and months as 30 days unless a date anchor
-	 * is supplied to {@link toMilliseconds}.
+	 * Years are treated as 365 days and months as 30 days unless a date anchor is supplied to
+	 * {@link toMilliseconds}.
 	 */
 	public get milliseconds() {
 		return this.toMilliseconds();
@@ -93,11 +94,11 @@ export class Duration {
 	/**
 	 * Convert the duration to milliseconds.
 	 *
-	 * When `from` is provided, year/month units are applied against that date
-	 * and the exact millisecond delta is returned.
+	 * When `from` is provided, year/month units are applied against that date and the exact
+	 * millisecond delta is returned.
 	 */
 	public toMilliseconds(from?: DateLike): number {
-		if (from !== undefined) {
+		if (!isUndefined(from)) {
 			const start = toDate(from);
 			return this.from(start).getTime() - start.getTime();
 		}
@@ -198,6 +199,7 @@ export function formatDuration(milliseconds: number, options: IFormatDurationOpt
 	}
 
 	let remaining = Math.floor(milliseconds);
+
 	const parts = [] as string[];
 
 	for (const [unit, unitMs] of FORMAT_DURATION_UNITS) {
@@ -211,7 +213,9 @@ export function formatDuration(milliseconds: number, options: IFormatDurationOpt
 		}
 
 		remaining -= amount * unitMs;
+
 		const label = resolveDurationLabel(unit, amount, options.labels?.[unit]);
+
 		parts.push(`${amount} ${label}`);
 	}
 

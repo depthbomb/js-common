@@ -1,17 +1,17 @@
 import { it, vi, expect, describe } from 'vitest';
 import {
-	swap,
-	Latch,
-	Barrier,
-	Mutex,
 	lazy,
 	once,
+	swap,
+	Latch,
+	Mutex,
+	Barrier,
 	deferred,
+	lazyAsync,
 	onceAsync,
 	Semaphore,
 	AsyncEvent,
 	AtomicValue,
-	lazyAsync,
 	memoizeAsync,
 	singleFlight,
 	compareAndSet,
@@ -493,8 +493,8 @@ describe('legacy module aliases', () => {
 
 		const fn = legacyOnce(() => 123);
 		expect(fn()).toBe(123);
-		expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('functional#once is deprecated'));
-		expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Use atomic#once instead.'));
+		expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('functional.once is deprecated'));
+		expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Use atomic.once instead.'));
 
 		warnSpy.mockRestore();
 	});
@@ -508,10 +508,10 @@ describe('legacy module aliases', () => {
 		expect(legacyResettableLazy(() => 2).get()).toBe(2);
 		const messages = warnSpy.mock.calls.map(([message]) => String(message));
 
-		expect(messages).toContainEqual(expect.stringContaining('lazy#lazy is deprecated'));
-		expect(messages).toContainEqual(expect.stringContaining('Use atomic#lazy instead.'));
-		expect(messages).toContainEqual(expect.stringContaining('state#resettableLazy is deprecated'));
-		expect(messages).toContainEqual(expect.stringContaining('Use atomic#resettableLazy instead.'));
+		expect(messages).toContainEqual(expect.stringContaining('lazy.lazy is deprecated'));
+		expect(messages).toContainEqual(expect.stringContaining('Use atomic.lazy instead.'));
+		expect(messages).toContainEqual(expect.stringContaining('state.resettableLazy is deprecated'));
+		expect(messages).toContainEqual(expect.stringContaining('Use atomic.resettableLazy instead.'));
 
 		warnSpy.mockRestore();
 	});

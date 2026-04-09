@@ -5,6 +5,9 @@ describe('root ESM entrypoint', () => {
 	it('re-exports symbols from the package root barrel', () => {
 		expect(common.Queue).toBeTypeOf('function');
 		expect(common.URLPath).toBeTypeOf('function');
+		expect(common.DateBuilder).toBeTypeOf('function');
+		expect(common.date).toBeTypeOf('function');
+		expect(common.DateUnit.Day).toBe('day');
 		expect(common.Barrier).toBeTypeOf('function');
 		expect(common.Mutex).toBeTypeOf('function');
 		expect(common.Semaphore).toBeTypeOf('function');

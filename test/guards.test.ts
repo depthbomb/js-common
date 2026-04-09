@@ -1,14 +1,14 @@
 import { it, expect, describe } from 'vitest';
 import {
-	has,
 	is,
+	has,
 	hasKey,
-	hasKeys,
-	hasShape,
 	isNull,
-	isOneOf,
+	hasKeys,
 	isClass,
 	isFalsy,
+	isOneOf,
+	hasShape,
 	isNumber,
 	isRecord,
 	isString,
