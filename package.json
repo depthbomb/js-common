@@ -42,12 +42,10 @@
 		"url": "https://github.com/depthbomb/js-common/issues"
 	},
 	"scripts": {
-		"build": "tsdown",
 		"dist": "tsdown",
-		"typecheck": "yarn build && tsc -p tsconfig.json --noEmit",
+		"typecheck": "yarn dist && tsc -p tsconfig.json --noEmit",
 		"release": "yarn dist && release-it",
 		"lint": "eslint ./src ./test --ext .ts",
-		"pretest": "yarn build",
 		"test": "yarn dist && vitest --run"
 	},
 	"devDependencies": {
