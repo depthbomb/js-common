@@ -71,10 +71,7 @@ describe('deprecate', () => {
 		wrapped();
 
 		const message = warnSpy.mock.calls[0][0];
-		expect(message).toContain('oldFn is deprecated');
-		expect(message).toContain('since v1.0');
-		expect(message).toContain('will be removed in v2.0');
-		expect(message).toContain('Use newFn instead.');
+		expect(message).toBe('[DEPRECATED] oldFn is deprecated since v1.0 and will be removed in v2.0. Use newFn instead.');
 
 		warnSpy.mockRestore();
 	});
@@ -86,7 +83,22 @@ describe('deprecate', () => {
 		wrapped();
 
 		const message = warnSpy.mock.calls[0][0];
-		expect(message).toContain('Anonymous function is deprecated');
+		expect(message).toBe('[DEPRECATED] Anonymous function is deprecated.');
+		warnSpy.mockRestore();
+	});
+
+	it('formats punctuation correctly when only some options are provided', () => {
+		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
+
+		const wrapped = deprecate(() => 123, {
+			deprecatedName: 'legacyThing',
+			removedIn: '4.0.0',
+		});
+
+		wrapped();
+
+		const message = warnSpy.mock.calls[0][0];
+		expect(message).toBe('[DEPRECATED] legacyThing is deprecated will be removed in 4.0.0.');
 		warnSpy.mockRestore();
 	});
 

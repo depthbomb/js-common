@@ -289,7 +289,29 @@ retries.reset(); // back to 3
 General function utilities such as `pipe` and `deprecate`.
 
 ```ts
-//
+import { deprecate, pipe } from '@depthbomb/common/functional';
+
+const result = pipe(
+	2,
+	(value) => value + 1,
+	(value) => value * 3
+); // 9
+
+// Renamed deprecated function
+function parseUserIdLegacy(value: string) {
+	return value.startsWith('user_') ? value.slice(5) : value;
+}
+
+// Uses original name of deprecated function to not break existing code
+const parseUserId = deprecate(parseUserIdLegacy, {
+	deprecatedName: 'parseUserId',
+	replacementName: 'parseUserIdNew',
+	deprecatedSince: '2.5.0',
+	removedIn: '3.0.0'
+});
+
+parseUserId('user_42'); // '42'
+// console.warn: [DEPRECATED] parseUserId is deprecated since 2.5.0 and will be removed in 3.0.0. Use parseUserIdNew instead.
 ```
 
 ### `collections`

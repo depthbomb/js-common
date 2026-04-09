@@ -43,21 +43,24 @@ export function deprecate<T extends Fn<any, any>>(fn: T, options: IDeprecateOpti
 		replacementName
 	} = options;
 
-	const messageParts = [`[DEPRECATED] ${deprecatedName} is deprecated`];
+	const details = [] as string[];
 
 	if (deprecatedSince) {
-		messageParts.push(`since ${deprecatedSince}`);
+		details.push(`since ${deprecatedSince}`);
 	}
 
 	if (removedIn) {
-		messageParts.push(`and will be removed in ${removedIn}`);
+		details.push(`will be removed in ${removedIn}`);
 	}
+
+	const status    = details.length > 0 ? ` ${details.join(' and ')}` : '';
+	const sentences = [`[DEPRECATED] ${deprecatedName} is deprecated${status}.`];
 
 	if (replacementName) {
-		messageParts.push(`Use ${replacementName} instead.`);
+		sentences.push(`Use ${replacementName} instead.`);
 	}
 
-	const message = messageParts.join(' ') + '.';
+	const message = sentences.join(' ');
 
 	return ((...args: Parameters<T>) => {
 		console.warn(message);
