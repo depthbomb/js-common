@@ -17,7 +17,6 @@
 		"./date": "./dist/date.mjs",
 		"./functional": "./dist/functional.mjs",
 		"./guards": "./dist/guards.mjs",
-		"./lazy": "./dist/lazy.mjs",
 		"./number": "./dist/number.mjs",
 		"./promise": "./dist/promise.mjs",
 		"./random": "./dist/random.mjs",
