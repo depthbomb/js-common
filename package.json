@@ -23,6 +23,10 @@
 			"import": "./dist/collections.mjs",
 			"require": "./dist/collections.cjs"
 		},
+		"./date": {
+			"import": "./dist/date.mjs",
+			"require": "./dist/date.cjs"
+		},
 		"./decorators": {
 			"import": "./dist/decorators.mjs",
 			"require": "./dist/decorators.cjs"

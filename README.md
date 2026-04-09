@@ -235,15 +235,44 @@ s.getUser('1');
 s.getUser('1'); // cached for 1 second
 ```
 
+### `date`
+
+UTC-stable date manipulation helpers centered around `DateBuilder`, a chainable `Date` subclass, and the `date()` factory for ergonomic creation.
+
+```ts
+import { DateBuilder, DateUnit, date } from '@depthbomb/common/date';
+
+const value = date('2026-04-08T12:34:56.789Z')
+	.startOf(DateUnit.Day)
+	.add({ days: 2, hours: 9, minutes: 30 });
+
+console.log(value instanceof Date); // true
+console.log(value instanceof DateBuilder); // true
+console.log(value.toISOString()); // 2026-04-10T09:30:00.000Z
+
+const monthEnd = date('2024-01-31T00:00:00.000Z')
+	.add({ months: 1 });
+
+console.log(monthEnd.toISOString()); // 2024-02-29T00:00:00.000Z
+
+const weekStart = date('2026-04-08T12:34:56.789Z')
+	.startOf(DateUnit.Week, { weekStartsOn: 1 });
+
+const monthBoundary = date('2026-04-08T12:34:56.789Z')
+	.endOf(DateUnit.Month);
+
+const patched = date('2026-04-08T12:34:56.789Z')
+	.set({ year: 2027, month: 0, date: 1, hours: 8, minutes: 0, seconds: 0, milliseconds: 0 });
+
+const plainDate = value.toDate();
+```
+
 ### `state`
 
 State primitives: `ResettableValue` and `Flag`.
 
-`resettableLazy` and `resettableLazyAsync` remain available here as legacy exports, but new code should import them from `atomic`.
-
 ```ts
 import { Flag, ResettableValue } from '@depthbomb/common/state';
-import { resettableLazy, resettableLazyAsync } from '@depthbomb/common/atomic';
 
 const flag = new Flag();
 flag.setTrue();
@@ -253,50 +282,14 @@ flag.reset();
 const retries = new ResettableValue(3);
 retries.set(1);
 retries.reset(); // back to 3
-
-const counter = resettableLazy(() => Math.random());
-const first = counter.get();
-counter.reset();
-const second = counter.get(); // recomputed
-
-const tokenCache = resettableLazyAsync(async () => {
-	const response = await fetch('https://example.com/token');
-	return response.text();
-});
-const token = await tokenCache.get();
-tokenCache.reset();
 ```
 
 ### `functional`
 
 General function utilities such as `pipe` and `deprecate`.
 
-`once` remains available here as a legacy export, but new code should import it from `atomic`.
-
 ```ts
-import { once } from '@depthbomb/common/atomic';
-
-const init = once(() => ({ startedAt: Date.now() }));
-
-const a = init();
-const b = init();
-console.log(a === b); // true
-```
-
-### `lazy`
-
-Legacy lazy initialization entrypoint.
-
-`lazy` and `lazyAsync` remain available here as legacy exports, but new code should import them from `atomic`.
-
-```ts
-import { lazy, lazyAsync } from '@depthbomb/common/atomic';
-
-const getConfig = lazy(() => ({ env: 'prod' }));
-const config = getConfig(); // factory runs once
-
-const getToken = lazyAsync(async () => 'token');
-const token = await getToken(); // promise created once
+//
 ```
 
 ### `collections`
@@ -395,18 +388,12 @@ if (isNumber(maybeCount)) {
 
 Shared type aliases and type-oriented helpers such as `Awaitable`, `Maybe`, `Nullable`, `ValueOf`, `NonEmptyArray`, `Brand`, `OptionalKeys`, `RequiredKeys`, JSON-related types, `cast`, `assume`, and `typedEntries`.
 
-Result helpers live in the `result` module. The legacy `typing` re-exports for `ok`, `err`, `isOk`, `mapOk`, `mapErr`, `tryCatch`, and `tryCatchAsync` are deprecated and scheduled for removal in `3.0.0`.
-
 ```ts
 import {
 	cast, assume, typedEntries,
 	type Awaitable, type Brand, type JsonValue, type Maybe, type NonEmptyArray,
 	type Nullable, type OptionalKeys, type RequiredKeys, type ValueOf
 } from '@depthbomb/common/typing';
-import {
-	ok, err, isOk, mapOk, mapErr, tryCatchAsync,
-	type Result
-} from '@depthbomb/common/result';
 
 const v = cast<object, { id: string }>({ id: 'a' });
 
@@ -423,15 +410,6 @@ type UserId = Brand<string, 'UserId'>;
 type OptionalUserKeys = OptionalKeys<{ id: string; name?: string }>;
 type RequiredUserKeys = RequiredKeys<{ id: string; name?: string }>;
 const payload: JsonValue = { tags: ['a', 'b'], active: true };
-
-const initial: Result<number, string> = ok(2);
-const doubled = mapOk(initial, (value) => value * 2);
-const message = mapErr(err('bad'), (e) => `error: ${e}`);
-
-const parsed = await tryCatchAsync(async () => JSON.parse('{"x":1}'));
-if (isOk(parsed)) {
-	console.log(parsed.value.x);
-}
 ```
 
 ### `url`

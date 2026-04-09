@@ -6,6 +6,9 @@ describe('CommonJS dist entrypoints', () => {
 
 		expect(common.Queue).toBeTypeOf('function');
 		expect(common.URLPath).toBeTypeOf('function');
+		expect(common.DateBuilder).toBeTypeOf('function');
+		expect(common.date).toBeTypeOf('function');
+		expect(common.DateUnit.Day).toBe('day');
 		expect(common.Barrier).toBeTypeOf('function');
 		expect(common.Mutex).toBeTypeOf('function');
 		expect(common.Semaphore).toBeTypeOf('function');
@@ -21,10 +24,14 @@ describe('CommonJS dist entrypoints', () => {
 
 	it('exports subpath CommonJS modules', async () => {
 		const { Queue } = await import('../dist/collections.cjs');
+		const { DateBuilder, DateUnit, date } = await import('../dist/date.cjs');
 		const { URLPath } = await import('../dist/url.cjs');
 		const { Barrier, Mutex, Semaphore, ReadWriteLock, AtomicValue, deferred, singleFlight, once, onceAsync } = await import('../dist/atomic.cjs');
 
 		expect(Queue).toBeTypeOf('function');
+		expect(DateBuilder).toBeTypeOf('function');
+		expect(date).toBeTypeOf('function');
+		expect(DateUnit.Day).toBe('day');
 		expect(URLPath).toBeTypeOf('function');
 		expect(Barrier).toBeTypeOf('function');
 		expect(Mutex).toBeTypeOf('function');
