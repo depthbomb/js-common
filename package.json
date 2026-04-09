@@ -48,7 +48,7 @@
 		"release": "yarn dist && release-it",
 		"lint": "eslint ./src ./test --ext .ts",
 		"pretest": "yarn build",
-		"test": "vitest --run"
+		"test": "yarn dist && vitest --run"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3.3.5",
