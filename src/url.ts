@@ -15,7 +15,7 @@ export type QueryValue =
 	| null
 	| boolean
 	| Array<QueryValue>
-	| Record<string, any>;
+	| Record<string, unknown>;
 // Taken from the `ufo` package
 /**
  * Query-object shape used by URL query mutation helpers.

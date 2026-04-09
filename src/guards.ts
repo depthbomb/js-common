@@ -87,7 +87,7 @@ export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
 		typeof value === 'object' &&
 		value !== null &&
 		'then' in value &&
-		typeof (value as any).then === 'function'
+		typeof (value as { then?: unknown }).then === 'function'
 	);
 }
 

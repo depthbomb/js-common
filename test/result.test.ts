@@ -37,12 +37,12 @@ describe('types helpers', () => {
 	});
 
 	it('tryCatch supports custom error mapping', () => {
-		const result = tryCatch(() => { throw new Error('fail'); }, (e) => 'mapped');
+		const result = tryCatch(() => { throw new Error('fail'); }, () => 'mapped');
 		expect(result).toEqual({ ok: false, error: 'mapped' });
 	});
 
 	it('tryCatch does not catch successful values when mapError is provided', () => {
-		const result = tryCatch(() => 5, (e) => 'mapped');
+		const result = tryCatch(() => 5, () => 'mapped');
 		expect(result).toEqual({ ok: true, value: 5 });
 	});
 

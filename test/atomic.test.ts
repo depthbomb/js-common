@@ -1,4 +1,4 @@
-import { it, vi, expect, describe } from 'vitest';
+import { it, expect, describe } from 'vitest';
 import {
 	lazy,
 	once,

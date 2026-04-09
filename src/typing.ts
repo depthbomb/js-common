@@ -33,7 +33,7 @@ export type AwaitableFn<Return = void, Args extends unknown[] = unknown[]> = (..
 /**
  * Class constructor type.
  */
-export type Class<T, Args extends unknown[] = any[]> = new (...args: Args) => T;
+export type Class<T, Args extends unknown[] = unknown[]> = new (...args: Args) => T;
 /**
  * A tuple-based array type with at least one item.
  */
@@ -143,7 +143,9 @@ export const cast = <T, U extends T>(value: U) => value;
  *
  * @param value Value to assert.
  */
-export function assume<T>(value: unknown): asserts value is T {}
+export function assume<T>(value: unknown): asserts value is T {
+	void value;
+}
 
 /**
  * Returns strongly typed `Object.entries` output.
