@@ -213,28 +213,6 @@ const pooled = await pool([
 const mapped = await pMap([1, 2, 3], async (v) => v * 10, { concurrency: 2 });
 ```
 
-### `decorators`
-
-TypeScript decorators for reusable behavior. Currently includes a TTL-based `cache` decorator for memoizing method results per instance and argument set.
-
-```ts
-import { cache } from '@depthbomb/common/decorators';
-
-class Service {
-	calls = 0;
-
-	@cache(1_000)
-	getUser(id: string) {
-		this.calls++;
-		return { id, calls: this.calls };
-	}
-}
-
-const s = new Service();
-s.getUser('1');
-s.getUser('1'); // cached for 1 second
-```
-
 ### `date`
 
 UTC-stable date manipulation helpers centered around `DateBuilder`, a chainable `Date` subclass, and the `date()` factory for ergonomic creation.

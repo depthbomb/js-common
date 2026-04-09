@@ -15,7 +15,6 @@
 		"./atomic": "./dist/atomic.mjs",
 		"./collections": "./dist/collections.mjs",
 		"./date": "./dist/date.mjs",
-		"./decorators": "./dist/decorators.mjs",
 		"./functional": "./dist/functional.mjs",
 		"./guards": "./dist/guards.mjs",
 		"./lazy": "./dist/lazy.mjs",

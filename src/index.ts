@@ -1,7 +1,6 @@
 export * from './atomic';
 export * from './collections';
 export * from './date';
-export * from './decorators';
 export { deprecate, pipe } from './functional';
 export * from './guards';
 export * from './number';
