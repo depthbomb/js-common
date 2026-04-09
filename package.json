@@ -11,73 +11,23 @@
 		"utilities"
 	],
 	"exports": {
-		".": {
-			"import": "./dist/index.mjs",
-			"require": "./dist/index.cjs"
-		},
-		"./atomic": {
-			"import": "./dist/atomic.mjs",
-			"require": "./dist/atomic.cjs"
-		},
-		"./collections": {
-			"import": "./dist/collections.mjs",
-			"require": "./dist/collections.cjs"
-		},
-		"./date": {
-			"import": "./dist/date.mjs",
-			"require": "./dist/date.cjs"
-		},
-		"./decorators": {
-			"import": "./dist/decorators.mjs",
-			"require": "./dist/decorators.cjs"
-		},
-		"./functional": {
-			"import": "./dist/functional.mjs",
-			"require": "./dist/functional.cjs"
-		},
-		"./guards": {
-			"import": "./dist/guards.mjs",
-			"require": "./dist/guards.cjs"
-		},
-		"./lazy": {
-			"import": "./dist/lazy.mjs",
-			"require": "./dist/lazy.cjs"
-		},
-		"./number": {
-			"import": "./dist/number.mjs",
-			"require": "./dist/number.cjs"
-		},
-		"./promise": {
-			"import": "./dist/promise.mjs",
-			"require": "./dist/promise.cjs"
-		},
-		"./random": {
-			"import": "./dist/random.mjs",
-			"require": "./dist/random.cjs"
-		},
-		"./result": {
-			"import": "./dist/result.mjs",
-			"require": "./dist/result.cjs"
-		},
-		"./state": {
-			"import": "./dist/state.mjs",
-			"require": "./dist/state.cjs"
-		},
-		"./timing": {
-			"import": "./dist/timing.mjs",
-			"require": "./dist/timing.cjs"
-		},
-		"./typing": {
-			"import": "./dist/typing.mjs",
-			"require": "./dist/typing.cjs"
-		},
-		"./url": {
-			"import": "./dist/url.mjs",
-			"require": "./dist/url.cjs"
-		}
+		".": "./dist/index.mjs",
+		"./atomic": "./dist/atomic.mjs",
+		"./collections": "./dist/collections.mjs",
+		"./date": "./dist/date.mjs",
+		"./decorators": "./dist/decorators.mjs",
+		"./functional": "./dist/functional.mjs",
+		"./guards": "./dist/guards.mjs",
+		"./lazy": "./dist/lazy.mjs",
+		"./number": "./dist/number.mjs",
+		"./promise": "./dist/promise.mjs",
+		"./random": "./dist/random.mjs",
+		"./result": "./dist/result.mjs",
+		"./state": "./dist/state.mjs",
+		"./timing": "./dist/timing.mjs",
+		"./typing": "./dist/typing.mjs",
+		"./url": "./dist/url.mjs"
 	},
-	"main": "./dist/index.cjs",
-	"module": "./dist/index.mjs",
 	"types": "./dist/index.d.cts",
 	"files": [
 		"dist"
