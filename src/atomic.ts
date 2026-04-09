@@ -1,4 +1,7 @@
-import type { Fn, Maybe, Awaitable, AwaitableFn } from './typing';
+import type { Maybe, Awaitable } from './typing';
+
+type AnyFn          = (...args: never[]) => unknown;
+type AnyAwaitableFn = (...args: never[]) => Awaitable<unknown>;
 
 const SINGLE_FLIGHT_KEY = Symbol('singleFlight');
 
@@ -23,12 +26,12 @@ export interface IAsyncLease extends AsyncDisposable {
 /**
  * A held mutex lease that releases the mutex when disposed.
  */
-export interface IMutexLease extends IAsyncLease {}
+export type MutexLease = IAsyncLease;
 
 /**
  * A held semaphore lease that releases one permit when disposed.
  */
-export interface ISemaphoreLease extends IAsyncLease {}
+export type SemaphoreLease = IAsyncLease;
 
 /**
  * A held read/write lock lease.
@@ -275,7 +278,7 @@ export class Mutex {
 	/**
 	 * Acquire the mutex and receive a lease that must be released or async-disposed.
 	 */
-	public async acquire(): Promise<IMutexLease> {
+	public async acquire(): Promise<MutexLease> {
 		if (!this.#locked) {
 			this.#locked = true;
 			return this.#createLease();
@@ -291,7 +294,7 @@ export class Mutex {
 	/**
 	 * Alias for {@link acquire}.
 	 */
-	public lock(): Promise<IMutexLease> {
+	public lock(): Promise<MutexLease> {
 		return this.acquire();
 	}
 
@@ -310,7 +313,7 @@ export class Mutex {
 		}
 	}
 
-	#createLease(): IMutexLease {
+	#createLease(): MutexLease {
 		return createLease(() => this.#release());
 	}
 
@@ -367,7 +370,7 @@ export class Semaphore {
 	/**
 	 * Acquire one permit and receive a lease that releases it when disposed.
 	 */
-	public async acquire(): Promise<ISemaphoreLease> {
+	public async acquire(): Promise<SemaphoreLease> {
 		if (this.#available > 0) {
 			this.#available--;
 			return this.#createLease();
@@ -393,7 +396,7 @@ export class Semaphore {
 		}
 	}
 
-	#createLease(): ISemaphoreLease {
+	#createLease(): SemaphoreLease {
 		return createLease(() => this.#release());
 	}
 
@@ -620,12 +623,12 @@ export function memoizeAsync<TArgs extends unknown[], TResult>(
  *
  * @param fn Async function to run once.
  */
-export function onceAsync<T extends AwaitableFn<any, any>>(fn: T): T {
+export function onceAsync<T extends AnyAwaitableFn>(fn: T): T {
 	let promise: Maybe<Promise<Awaited<ReturnType<T>>>>;
 
 	return ((...args: Parameters<T>) => {
 		if (!promise) {
-			promise = Promise.resolve(fn(...args)).catch((error) => {
+			promise = Promise.resolve(fn(...args) as ReturnType<T>).catch((error) => {
 				promise = undefined;
 				throw error;
 			});
@@ -706,13 +709,13 @@ export function swap<T>(target: { value: T }, next: T): T {
  * @param fn Function to be called only once.
  * @returns A new function that calls the original function only once.
  */
-export function once<T extends Fn<any, any>>(fn: T): T {
+export function once<T extends AnyFn>(fn: T): T {
 	let called = false;
-	let result: ReturnType<T>;
+	let result!: ReturnType<T>;
 
 	return ((...args: Parameters<T>) => {
 		if (!called) {
-			result = fn(...args);
+			result = fn(...args) as ReturnType<T>;
 			called = true;
 		}
 

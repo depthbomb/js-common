@@ -1,4 +1,5 @@
-import { Fn } from './typing';
+type AnyFn = (...args: never[]) => unknown;
+type PipeFn = (value: never) => unknown;
 
 interface IDeprecateOptions {
 	deprecatedName?: string;
@@ -13,8 +14,14 @@ interface IDeprecateOptions {
  * @param value Initial value to pass into the first function
  * @param fns Functions to apply in order
  */
-export function pipe<T>(value: T, ...fns: Array<Fn<any, any>>): any {
-	return fns.reduce((v, f) => f(v), value);
+export function pipe<T>(value: T, ...fns: Array<PipeFn>): unknown {
+	let result: unknown = value;
+
+	for (const fn of fns) {
+		result = fn(result as never);
+	}
+
+	return result;
 }
 
 /**
@@ -23,7 +30,7 @@ export function pipe<T>(value: T, ...fns: Array<Fn<any, any>>): any {
  * @param fn The function to wrap.
  * @param options Options to customize the deprecation message.
  */
-export function deprecate<T extends Fn<any, any>>(fn: T, options: IDeprecateOptions = {}): T {
+export function deprecate<T extends AnyFn>(fn: T, options: IDeprecateOptions = {}): T {
 	const {
 		deprecatedName = fn.name || 'Anonymous function',
 		deprecatedSince,
