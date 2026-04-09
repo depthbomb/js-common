@@ -41,6 +41,22 @@ describe('random utilities', () => {
 		])).toBe('c');
 	});
 
+	it('pickWeighted never selects zero-weight items', () => {
+		vi.spyOn(Math, 'random').mockReturnValue(0.0);
+		expect(pickWeighted([
+			{ value: 'zero', weight: 0 },
+			{ value: 'one', weight: 1 },
+		])).toBe('one');
+
+		vi.spyOn(Math, 'random').mockReturnValue(0.5);
+		expect(pickWeighted([
+			{ value: 'skip-a', weight: 0 },
+			{ value: 'b', weight: 2 },
+			{ value: 'skip-c', weight: 0 },
+			{ value: 'd', weight: 2 },
+		])).toBe('d');
+	});
+
 	it('validates invalid inputs', () => {
 		expect(() => randomFloat(2, 1)).toThrow('min must be <= max');
 		expect(() => randomInt(1.2, 3)).toThrow('min and max must be integers');

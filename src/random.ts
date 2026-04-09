@@ -79,8 +79,12 @@ export function pickWeighted<T>(items: Array<IWeightedItem<T>>): T {
 	let threshold = randomFloat(0, totalWeight);
 
 	for (const item of items) {
+		if (item.weight === 0) {
+			continue;
+		}
+
 		threshold -= item.weight;
-		if (threshold <= 0) {
+		if (threshold < 0) {
 			return item.value;
 		}
 	}
