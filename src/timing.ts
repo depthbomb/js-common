@@ -2,6 +2,7 @@ import { isUndefined } from './guards';
 import type { DateLike } from './guards';
 import type { Maybe, Awaitable } from './typing';
 
+//#region Duration
 /**
  * Parsed duration parts.
  */
@@ -22,6 +23,18 @@ export interface IDurationParts {
 export interface IFormatDurationOptions {
 	precision?: number;
 	labels?: Partial<Record<keyof IDurationParts, string | { singular: string; plural: string }>>;
+}
+
+/**
+ * Options for {@link retry}.
+ */
+export interface IRetryOptions {
+	attempts?: number;
+	baseMs?: number;
+	maxMs?: number;
+	jitter?: RetryJitter;
+	signal?: AbortSignal;
+	shouldRetry?: (error: unknown, attempt: number) => Awaitable<boolean>;
 }
 
 const enum DurationUnit {
@@ -222,17 +235,258 @@ export function formatDuration(milliseconds: number, options: IFormatDurationOpt
 	return parts.join(' ');
 }
 
-/**
- * Options for {@link retry}.
- */
-export interface IRetryOptions {
-	attempts?: number;
-	baseMs?: number;
-	maxMs?: number;
-	jitter?: RetryJitter;
-	signal?: AbortSignal;
-	shouldRetry?: (error: unknown, attempt: number) => Awaitable<boolean>;
+function normalizeDurationUnit(unit: string): keyof IDurationParts {
+	switch (unit.toLowerCase()) {
+		case 'y':
+		case 'yr':
+		case 'yrs':
+		case 'year':
+		case 'years':
+			return 'years';
+		case 'mo':
+		case 'mos':
+		case 'month':
+		case 'months':
+			return 'months';
+		case 'w':
+		case 'week':
+		case 'weeks':
+			return 'weeks';
+		case 'd':
+		case 'day':
+		case 'days':
+			return 'days';
+		case 'h':
+		case 'hr':
+		case 'hrs':
+		case 'hour':
+		case 'hours':
+			return 'hours';
+		case 'm':
+		case 'min':
+		case 'mins':
+		case 'minute':
+		case 'minutes':
+			return 'minutes';
+		case 's':
+		case 'sec':
+		case 'secs':
+		case 'second':
+		case 'seconds':
+			return 'seconds';
+		case 'ms':
+		case 'msec':
+		case 'msecs':
+		case 'millisecond':
+		case 'milliseconds':
+			return 'milliseconds';
+		default:
+			throw new Error(`unsupported duration unit: ${unit}`);
+	}
 }
+
+function toDate(input: DateLike): Date {
+	const date = input instanceof Date ? new Date(input.getTime()) : new Date(input);
+
+	if (Number.isNaN(date.getTime())) {
+		throw new Error('invalid date');
+	}
+
+	return date;
+}
+
+function applyCalendarDuration(date: Date, years: number, months: number) {
+	const originalDay = date.getUTCDate();
+	const totalMonths = date.getUTCMonth() + months + years * 12;
+	const targetYear = date.getUTCFullYear() + Math.floor(totalMonths / 12);
+	const targetMonth = ((totalMonths % 12) + 12) % 12;
+	const lastDay = getLastDayOfMonth(targetYear, targetMonth);
+
+	date.setUTCFullYear(targetYear, targetMonth, Math.min(originalDay, lastDay));
+}
+
+function getLastDayOfMonth(year: number, month: number) {
+	return new Date(year, month + 1, 0).getDate();
+}
+
+const FORMAT_DURATION_UNITS = [
+	[DurationUnit.Years, FIXED_DURATION_MS[DurationUnit.Years]],
+	[DurationUnit.Months, FIXED_DURATION_MS[DurationUnit.Months]],
+	[DurationUnit.Weeks, FIXED_DURATION_MS[DurationUnit.Weeks]],
+	[DurationUnit.Days, FIXED_DURATION_MS[DurationUnit.Days]],
+	[DurationUnit.Hours, FIXED_DURATION_MS[DurationUnit.Hours]],
+	[DurationUnit.Minutes, FIXED_DURATION_MS[DurationUnit.Minutes]],
+	[DurationUnit.Seconds, FIXED_DURATION_MS[DurationUnit.Seconds]],
+	[DurationUnit.Milliseconds, FIXED_DURATION_MS[DurationUnit.Milliseconds]]
+] as const;
+
+const FORMAT_DURATION_LABELS = {
+	[DurationUnit.Years]: { singular: 'year', plural: 'years' },
+	[DurationUnit.Months]: { singular: 'month', plural: 'months' },
+	[DurationUnit.Weeks]: { singular: 'week', plural: 'weeks' },
+	[DurationUnit.Days]: { singular: 'day', plural: 'days' },
+	[DurationUnit.Hours]: { singular: 'hour', plural: 'hours' },
+	[DurationUnit.Minutes]: { singular: 'minute', plural: 'minutes' },
+	[DurationUnit.Seconds]: { singular: 'second', plural: 'seconds' },
+	[DurationUnit.Milliseconds]: { singular: 'millisecond', plural: 'milliseconds' }
+} as const;
+
+function resolveDurationLabel(
+	unit: keyof IDurationParts,
+	amount: number,
+	override?: string | { singular: string; plural: string }
+) {
+	if (override) {
+		if (typeof override === 'string') {
+			return override;
+		}
+
+		return amount === 1 ? override.singular : override.plural;
+	}
+
+	return amount === 1 ? FORMAT_DURATION_LABELS[unit].singular : FORMAT_DURATION_LABELS[unit].plural;
+}
+//#endregion
+
+//#region TimerManager
+type SetTimeoutReturnType  = ReturnType<typeof setTimeout>;
+type SetTimeoutParameters  = Parameters<typeof setTimeout>;
+type SetIntervalReturnType = ReturnType<typeof setInterval>;
+type SetIntervalParameters = Parameters<typeof setInterval>;
+
+export class TimerManager {
+	static readonly #timeouts  = new Set<SetTimeoutReturnType>();
+	static readonly #intervals = new Set<SetIntervalReturnType>();
+
+	/**
+	 * Schedules a function to run after a delay, identical to the native `setTimeout` API, but
+	 * registers the timer so it can be tracked and cleared via {@link TimerManager.clearAll}.
+	 *
+	 * The timer is automatically deregistered once the callback fires.
+	 *
+	 * @param args - The same arguments accepted by the native `setTimeout`.
+	 * @returns The timer ID, which can be passed to {@link clearTimeout}.
+	 */
+	public static setTimeout(...args: SetTimeoutParameters): SetTimeoutReturnType {
+		const [fn, delay, ...rest] = args;
+
+		const id = setTimeout(() => {
+			try {
+				fn(...rest);
+			} finally {
+				this.#timeouts.delete(id);
+			}
+		}, delay);
+
+		this.#timeouts.add(id);
+
+		return id;
+	}
+
+	/**
+	 * Schedules a function to run repeatedly on a fixed interval, identical to the native
+	 * `setInterval` API, but registers the timer so it can be tracked and cleared via
+	 * {@link TimerManager.clearAll}.
+	 *
+	 * @param args - The same arguments accepted by the native `setInterval`.
+	 * @returns The timer ID, which can be passed to {@link clearInterval}.
+	 */
+	public static setInterval(...args: SetIntervalParameters): SetIntervalReturnType {
+		const [fn, delay, ...rest] = args;
+		const id                   = setInterval(() => fn(...rest), delay);
+
+		this.#intervals.add(id);
+
+		return id;
+	}
+
+	/**
+	 * Returns whether the given timeout ID is currently active and tracked.
+	 *
+	 * @param id - A timeout ID returned by {@link setTimeout}.
+	 * @returns `true` if the timeout is pending, `false` otherwise.
+	 */
+	public static hasTimeout(id: SetTimeoutReturnType) {
+		return this.#timeouts.has(id);
+	}
+
+	/**
+	 * Returns whether the given interval ID is currently active and tracked.
+	 *
+	 * @param id - An interval ID returned by {@link setInterval}.
+	 * @returns `true` if the interval is active, `false` otherwise.
+	 */
+	public static hasInterval(id: SetIntervalReturnType) {
+		return this.#intervals.has(id);
+	}
+
+	/**
+	 * Returns the number of pending timeouts currently being tracked.
+	 *
+	 * @returns The count of active timeouts.
+	 */
+	public static getTimeoutCount() {
+		return this.#timeouts.size;
+	}
+
+	/**
+	 * Returns the number of active intervals currently being tracked.
+	 *
+	 * @returns The count of active intervals.
+	 */
+	public static getIntervalCount() {
+		return this.#intervals.size;
+	}
+
+	/**
+	 * Returns the counts of all currently tracked timers.
+	 *
+	 * @returns An object with `timeouts` and `intervals` counts.
+	 */
+	public static getCounts() {
+		return {
+			timeouts: this.getTimeoutCount(),
+			intervals: this.getIntervalCount(),
+		};
+	}
+
+	/**
+	 * Cancels a tracked timeout and removes it from the internal registry.
+	 * No-ops if the ID is not found.
+	 *
+	 * @param id - A timeout ID returned by {@link setTimeout}.
+	 */
+	public static clearTimeout(id: SetTimeoutReturnType) {
+		clearTimeout(id);
+		this.#timeouts.delete(id);
+	}
+
+	/**
+	 * Cancels a tracked interval and removes it from the internal registry.
+	 * No-ops if the ID is not found.
+	 *
+	 * @param id - An interval ID returned by {@link setInterval}.
+	 */
+	public static clearInterval(id: SetIntervalReturnType) {
+		clearInterval(id);
+		this.#intervals.delete(id);
+	}
+
+	/**
+	 * Cancels all tracked timeouts and intervals, clearing the internal registries entirely.
+	 * Equivalent to calling {@link clearTimeout} and {@link clearInterval} for every active timer.
+	 */
+	public static clearAll() {
+		for (const id of this.#timeouts) {
+			this.clearTimeout(id);
+		}
+
+		for (const id of this.#intervals) {
+			this.clearInterval(id);
+		}
+	}
+}
+//#endregion
 
 /**
  * Jitter strategies for retry delays.
@@ -483,116 +737,4 @@ function getJitteredDelay(delayMs: number, jitter: RetryJitter) {
 	}
 
 	return Math.floor(delayMs / 2 + Math.random() * (delayMs / 2));
-}
-
-function normalizeDurationUnit(unit: string): keyof IDurationParts {
-	switch (unit.toLowerCase()) {
-		case 'y':
-		case 'yr':
-		case 'yrs':
-		case 'year':
-		case 'years':
-			return 'years';
-		case 'mo':
-		case 'mos':
-		case 'month':
-		case 'months':
-			return 'months';
-		case 'w':
-		case 'week':
-		case 'weeks':
-			return 'weeks';
-		case 'd':
-		case 'day':
-		case 'days':
-			return 'days';
-		case 'h':
-		case 'hr':
-		case 'hrs':
-		case 'hour':
-		case 'hours':
-			return 'hours';
-		case 'm':
-		case 'min':
-		case 'mins':
-		case 'minute':
-		case 'minutes':
-			return 'minutes';
-		case 's':
-		case 'sec':
-		case 'secs':
-		case 'second':
-		case 'seconds':
-			return 'seconds';
-		case 'ms':
-		case 'msec':
-		case 'msecs':
-		case 'millisecond':
-		case 'milliseconds':
-			return 'milliseconds';
-		default:
-			throw new Error(`unsupported duration unit: ${unit}`);
-	}
-}
-
-function toDate(input: DateLike): Date {
-	const date = input instanceof Date ? new Date(input.getTime()) : new Date(input);
-
-	if (Number.isNaN(date.getTime())) {
-		throw new Error('invalid date');
-	}
-
-	return date;
-}
-
-function applyCalendarDuration(date: Date, years: number, months: number) {
-	const originalDay = date.getUTCDate();
-	const totalMonths = date.getUTCMonth() + months + years * 12;
-	const targetYear = date.getUTCFullYear() + Math.floor(totalMonths / 12);
-	const targetMonth = ((totalMonths % 12) + 12) % 12;
-	const lastDay = getLastDayOfMonth(targetYear, targetMonth);
-
-	date.setUTCFullYear(targetYear, targetMonth, Math.min(originalDay, lastDay));
-}
-
-function getLastDayOfMonth(year: number, month: number) {
-	return new Date(year, month + 1, 0).getDate();
-}
-
-const FORMAT_DURATION_UNITS = [
-	[DurationUnit.Years, FIXED_DURATION_MS[DurationUnit.Years]],
-	[DurationUnit.Months, FIXED_DURATION_MS[DurationUnit.Months]],
-	[DurationUnit.Weeks, FIXED_DURATION_MS[DurationUnit.Weeks]],
-	[DurationUnit.Days, FIXED_DURATION_MS[DurationUnit.Days]],
-	[DurationUnit.Hours, FIXED_DURATION_MS[DurationUnit.Hours]],
-	[DurationUnit.Minutes, FIXED_DURATION_MS[DurationUnit.Minutes]],
-	[DurationUnit.Seconds, FIXED_DURATION_MS[DurationUnit.Seconds]],
-	[DurationUnit.Milliseconds, FIXED_DURATION_MS[DurationUnit.Milliseconds]]
-] as const;
-
-const FORMAT_DURATION_LABELS = {
-	[DurationUnit.Years]: { singular: 'year', plural: 'years' },
-	[DurationUnit.Months]: { singular: 'month', plural: 'months' },
-	[DurationUnit.Weeks]: { singular: 'week', plural: 'weeks' },
-	[DurationUnit.Days]: { singular: 'day', plural: 'days' },
-	[DurationUnit.Hours]: { singular: 'hour', plural: 'hours' },
-	[DurationUnit.Minutes]: { singular: 'minute', plural: 'minutes' },
-	[DurationUnit.Seconds]: { singular: 'second', plural: 'seconds' },
-	[DurationUnit.Milliseconds]: { singular: 'millisecond', plural: 'milliseconds' }
-} as const;
-
-function resolveDurationLabel(
-	unit: keyof IDurationParts,
-	amount: number,
-	override?: string | { singular: string; plural: string }
-) {
-	if (override) {
-		if (typeof override === 'string') {
-			return override;
-		}
-
-		return amount === 1 ? override.singular : override.plural;
-	}
-
-	return amount === 1 ? FORMAT_DURATION_LABELS[unit].singular : FORMAT_DURATION_LABELS[unit].plural;
 }

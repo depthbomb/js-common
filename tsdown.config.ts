@@ -11,7 +11,7 @@ export default defineConfig({
 	deps: {
 		skipNodeModulesBundle: true
 	},
-	target: ['chrome142', 'firefox145', 'safari24', 'node24'],
+	target: ['chrome142', 'firefox145', 'safari24', 'node22'],
 	exports: {
 		packageJson: false
 	},

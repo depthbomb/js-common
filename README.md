@@ -127,6 +127,7 @@ import {
 	withAbort,
 	raceSignals,
 	RetryJitter,
+	TimerManager,
 } from '@depthbomb/common/timing';
 
 await timeout(250);
@@ -179,6 +180,13 @@ formatDuration(2 * 365 * 24 * 60 * 60 * 1_000, {
 		years: { singular: 'año', plural: 'años' }
 	}
 }); // "2 años"
+
+// Single source of truth for timeouts and intervals
+TimerManager.setInterval(console.log, 1_000);
+TimerManager.setInterval(console.log, 1_500);
+TimerManager.setInterval(console.log, 2_000);
+
+TimerManager.clearAll();
 ```
 
 ### `promise`
