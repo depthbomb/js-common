@@ -118,6 +118,24 @@ export class Queue<T> {
 	}
 }
 
+/** A last-in, first-out collection. */
+export class Stack<T> implements Iterable<T> {
+	#items: T[];
+
+	public constructor(initial: Iterable<T> = []) {
+		this.#items = [...initial];
+	}
+
+	public get size() { return this.#items.length; }
+	public get isEmpty() { return this.#items.length === 0; }
+	public push(item: T): void { this.#items.push(item); }
+	public pop(): Maybe<T> { return this.#items.pop(); }
+	public peek(): Maybe<T> { return this.#items.at(-1); }
+	public clear(): void { this.#items = []; }
+	public toArray(): T[] { return this.#items.slice().reverse(); }
+	public *[Symbol.iterator](): Iterator<T> { yield* this.#items.toReversed(); }
+}
+
 /**
  * Queue with a fixed maximum size and configurable overflow policy.
  */

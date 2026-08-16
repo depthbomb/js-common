@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest';
-import { Queue, BoundedQueue, BoundedQueueOverflow } from '../dist/collections.mjs';
+import { Queue, Stack, BoundedQueue, BoundedQueueOverflow } from '../dist/collections.mjs';
 
 describe('Queue', () => {
 	it('supports enqueue, dequeue, peek, size, and isEmpty', () => {
@@ -104,5 +104,21 @@ describe('BoundedQueue', () => {
 		queue.clear();
 		expect(queue.isEmpty).toBe(true);
 		expect(queue.size).toBe(0);
+	});
+});
+
+describe('Stack', () => {
+	it('provides LIFO access, iteration, and independent array snapshots', () => {
+		const stack = new Stack([1, 2]);
+		stack.push(3);
+		expect(stack.peek()).toBe(3);
+		expect([...stack]).toEqual([3, 2, 1]);
+		const snapshot = stack.toArray();
+		expect(stack.pop()).toBe(3);
+		expect(snapshot).toEqual([3, 2, 1]);
+		expect(stack.size).toBe(2);
+		stack.clear();
+		expect(stack.isEmpty).toBe(true);
+		expect(stack.pop()).toBeUndefined();
 	});
 });
