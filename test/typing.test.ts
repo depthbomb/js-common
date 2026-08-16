@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest';
-import { cast, assume, typedEntries } from '../dist/typing.mjs';
+import { cast, assume, typedKeys, typedEntries } from '../dist/typing.mjs';
 import type { Brand, ValueOf, JSONValue, OptionalKeys, RequiredKeys, NonEmptyArray } from '../dist/typing.mjs';
 
 type Equal<A, B> =
@@ -47,6 +47,12 @@ describe('types helpers', () => {
 			['first', 1],
 			['second', 'two'],
 		]);
+	});
+
+	it('typedKeys returns enumerable own string keys with typed output', () => {
+		const symbol = Symbol('hidden');
+		const keys: Array<'first' | 'second'> = typedKeys({ first: 1, second: 2, [symbol]: 3 });
+		expect(keys).toEqual(['first', 'second']);
 	});
 
 	it('supports the new utility typing shapes at compile time', () => {

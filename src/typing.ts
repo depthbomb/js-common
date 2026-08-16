@@ -157,3 +157,8 @@ export function typedEntries<T extends object>(obj: T) {
 		[K in keyof T]: [K, T[K]];
 	}[keyof T][];
 }
+
+/** Return enumerable own string keys while preserving the object's key union. */
+export function typedKeys<T extends object>(obj: T): Array<Extract<keyof T, string>> {
+	return Object.keys(obj) as Array<Extract<keyof T, string>>;
+}
