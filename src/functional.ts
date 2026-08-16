@@ -24,6 +24,12 @@ export function pipe<T>(value: T, ...fns: Array<PipeFn>): unknown {
 	return result;
 }
 
+/** Run a side effect for a value and return that same value unchanged. */
+export function tap<T>(value: T, effect: (value: T) => void): T {
+	effect(value);
+	return value;
+}
+
 /**
  * Designates a function as deprecated by showing a console warning when calling it.
  *

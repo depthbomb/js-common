@@ -1,5 +1,5 @@
 import { it, vi, expect, describe } from 'vitest';
-import { pipe, deprecate } from '../dist/functional.mjs';
+import { pipe, tap, deprecate } from '../dist/functional.mjs';
 
 describe('pipe', () => {
 	it('applies functions from left to right', () => {
@@ -34,6 +34,16 @@ describe('pipe', () => {
 
 		expect(result).toBe(6);
 		expect(spy).toEqual([1, 3]);
+	});
+});
+
+describe('tap', () => {
+	it('runs a side effect and preserves value identity', () => {
+		const value = { id: 1 };
+		const effect = vi.fn();
+
+		expect(tap(value, effect)).toBe(value);
+		expect(effect).toHaveBeenCalledWith(value);
 	});
 });
 
