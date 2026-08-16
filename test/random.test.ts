@@ -1,5 +1,5 @@
 import { it, vi, expect, describe, afterEach } from 'vitest';
-import { randomInt, pickRandom, randomFloat, pickWeighted } from '../dist/random.mjs';
+import { shuffle, randomInt, pickRandom, randomFloat, pickWeighted } from '../dist/random.mjs';
 
 describe('random utilities', () => {
 	afterEach(() => {
@@ -64,5 +64,15 @@ describe('random utilities', () => {
 		expect(() => pickWeighted([])).toThrow('cannot pick from empty weighted items');
 		expect(() => pickWeighted([{ value: 'x', weight: -1 }])).toThrow('weights must be finite numbers >= 0');
 		expect(() => pickWeighted([{ value: 'x', weight: 0 }])).toThrow('total weight must be > 0');
+	});
+
+	it('shuffles into a new array with deterministic swaps', () => {
+		vi.spyOn(Math, 'random').mockReturnValueOnce(0).mockReturnValueOnce(0.5);
+		const input = [1, 2, 3];
+		const result = shuffle(input);
+
+		expect(result).toEqual([3, 2, 1]);
+		expect(result).not.toBe(input);
+		expect(input).toEqual([1, 2, 3]);
 	});
 });

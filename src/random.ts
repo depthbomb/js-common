@@ -53,6 +53,17 @@ export function pickRandom<T>(values: readonly T[]): T {
 	return values[index] as T;
 }
 
+/** Return a shuffled copy using the unbiased Fisher-Yates algorithm. */
+export function shuffle<T>(values: readonly T[]): T[] {
+	const result = [...values];
+	for (let i = result.length - 1; i > 0; i--) {
+		const j = randomInt(0, i);
+		[result[i], result[j]] = [result[j]!, result[i]!];
+	}
+
+	return result;
+}
+
 /**
  * Picks a value from weighted candidates.
  *
