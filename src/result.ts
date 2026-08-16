@@ -60,6 +60,26 @@ export function mapErr<T, E, F>(result: Result<T, E>, mapper: (error: E) => F): 
 	return err(mapper(result.error));
 }
 
+/** Return the success value or throw the stored error. */
+export function unwrap<T, E>(result: Result<T, E>): T {
+	if (result.ok) {
+		return result.value;
+	}
+
+	throw result.error;
+}
+
+/** Return the success value or a lazily/eagerly supplied fallback. */
+export function unwrapOr<T, E>(result: Result<T, E>, fallback: T | ((error: E) => T)): T {
+	if (result.ok) {
+		return result.value;
+	}
+
+	return typeof fallback === 'function'
+		? (fallback as (error: E) => T)(result.error)
+		: fallback;
+}
+
 /**
  * Executes a function and captures any thrown error as a {@link Result}.
  *

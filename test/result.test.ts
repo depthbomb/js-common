@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest';
-import { ok, err, isOk, mapOk, mapErr, tryCatch, tryCatchAsync } from '../dist/result.mjs';
+import { ok, err, isOk, mapOk, mapErr, unwrap, unwrapOr, tryCatch, tryCatchAsync } from '../dist/result.mjs';
 
 describe('types helpers', () => {
 	it('ok and err create Result values', () => {
@@ -23,6 +23,18 @@ describe('types helpers', () => {
 	it('mapErr only maps error values', () => {
 		expect(mapErr(err('bad'), (value) => value.toUpperCase())).toEqual({ ok: false, error: 'BAD' });
 		expect(mapErr(ok(10), () => 'x')).toEqual({ ok: true, value: 10 });
+	});
+
+	it('unwrap extracts successes and throws stored failures', () => {
+		const failure = new Error('no value');
+		expect(unwrap(ok(5))).toBe(5);
+		expect(() => unwrap(err(failure))).toThrow(failure);
+	});
+
+	it('unwrapOr supports eager and error-derived fallback values', () => {
+		expect(unwrapOr(ok(5), 10)).toBe(5);
+		expect(unwrapOr(err('missing'), 10)).toBe(10);
+		expect(unwrapOr(err('missing'), error => error.length)).toBe(7);
 	});
 
 	it('tryCatch returns ok on successful operation', () => {
