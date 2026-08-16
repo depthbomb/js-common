@@ -134,6 +134,20 @@ export async function pMap<T, U>(values: Iterable<T> | AsyncIterable<T>, mapper:
 	return results;
 }
 
+/** Filter sync or async iterables with an async predicate and bounded concurrency. */
+export async function pFilter<T>(
+	values: Iterable<T> | AsyncIterable<T>,
+	predicate: (value: T, index: number) => Awaitable<boolean>,
+	options: IConcurrencyOptions = {}
+): Promise<T[]> {
+	const candidates = await pMap(values, async (value, index) => ({
+		value,
+		matches: await predicate(value, index)
+	}), options);
+
+	return candidates.filter(candidate => candidate.matches).map(candidate => candidate.value);
+}
+
 function validateConcurrency(concurrency: number) {
 	if (!Number.isInteger(concurrency) || concurrency < 1) {
 		throw new Error('concurrency must be an integer >= 1');

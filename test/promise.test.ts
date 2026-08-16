@@ -1,6 +1,6 @@
 import { timeout } from '../dist/timing.mjs';
 import { it, expect, describe } from 'vitest';
-import { pMap, pool, allSettledDetailed } from '../dist/promise.mjs';
+import { pMap, pool, pFilter, allSettledDetailed } from '../dist/promise.mjs';
 
 describe('promise utilities', () => {
 	it('allSettledDetailed returns full results and split values/errors', async () => {
@@ -88,5 +88,19 @@ describe('promise utilities', () => {
 	it('validates concurrency options', async () => {
 		await expect(pool([async () => 1], { concurrency: 0 })).rejects.toThrow('concurrency must be an integer >= 1');
 		await expect(pMap([1], async (v) => v, { concurrency: -1 })).rejects.toThrow('concurrency must be an integer >= 1');
+	});
+
+	it('filters values asynchronously while preserving source order', async () => {
+		const active = { current: 0, maximum: 0 };
+		const values = await pFilter([1, 2, 3, 4], async (value, index) => {
+			active.current++;
+			active.maximum = Math.max(active.maximum, active.current);
+			await timeout(1);
+			active.current--;
+			return value % 2 === 0 && index > 0;
+		}, { concurrency: 2 });
+
+		expect(values).toEqual([2, 4]);
+		expect(active.maximum).toBe(2);
 	});
 });
