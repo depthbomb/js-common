@@ -98,6 +98,13 @@ describe('URLPath', () => {
 		expect(withHash.withoutHash().hash).toBe('');
 	});
 
+	it('replaces the pathname while preserving query and hash', () => {
+		const changed = new URLPath('https://example.com/old?a=1#top').withPathname('/new path/item');
+
+		expect(changed.toString()).toBe('https://example.com/new%20path/item?a=1#top');
+		expect(changed.parts).toEqual(['new path', 'item']);
+	});
+
 	it('supports resolve, equals, string conversions, and static constructors', () => {
 		const fromStatic = URLPath.from('https://example.com/a/b/');
 		const resolved = fromStatic.resolve('../c');

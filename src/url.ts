@@ -218,6 +218,13 @@ export class URLPath {
 		return new URLPath(url);
 	}
 
+	/** Replace the pathname while preserving origin, query, and hash components. */
+	public withPathname(pathname: string): URLPath {
+		const url = new URL(this.#url.toString());
+		url.pathname = pathname;
+		return new URLPath(url);
+	}
+
 	/**
 	 * Replaces query parameter values for the provided keys.
 	 *
