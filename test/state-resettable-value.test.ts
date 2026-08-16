@@ -24,6 +24,15 @@ describe('ResettableValue', () => {
 		expect(value.value).toBe('start');
 	});
 
+	it('updates from the current value and returns the result', () => {
+		const value = new ResettableValue(4);
+
+		expect(value.update(current => current * 3)).toBe(12);
+		expect(value.value).toBe(12);
+		value.reset();
+		expect(value.value).toBe(4);
+	});
+
 	it('valueOf and toString reflect the current value', () => {
 		const value = new ResettableValue<number>(42);
 

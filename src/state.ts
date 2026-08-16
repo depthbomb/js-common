@@ -29,6 +29,12 @@ export class ResettableValue<T> {
 		this.value = value;
 	}
 
+	/** Replace the current value using its previous value and return the result. */
+	public update(updater: (value: T) => T): T {
+		this.value = updater(this.value);
+		return this.value;
+	}
+
 	/**
 	 * Restore the value back to its initial constructor value.
 	 */
