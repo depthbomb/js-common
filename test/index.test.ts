@@ -1,4 +1,4 @@
-import * as common from '../dist/index.mjs';
+import * as common from '@depthbomb/common';
 import { it, expect, describe } from 'vitest';
 
 describe('root ESM entrypoint', () => {
