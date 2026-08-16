@@ -21,6 +21,7 @@ import {
 	once,
 	onceAsync,
 	Mutex,
+	KeyedMutex,
 	ReadWriteLock,
 	Semaphore,
 	compareAndSet,
@@ -60,6 +61,11 @@ const mutex = new Mutex();
 
 await mutex.runExclusive(async () => {
 	// protected async work
+});
+
+const keyedMutex = new KeyedMutex<string>();
+await keyedMutex.runExclusive('user:42', async () => {
+	// only work for this key is serialized; other keys can run concurrently
 });
 
 const semaphore = new Semaphore(2);
@@ -128,6 +134,7 @@ import {
 	raceSignals,
 	RetryJitter,
 	TimerManager,
+	measure,
 } from '@depthbomb/common/timing';
 
 await timeout(250);
@@ -138,6 +145,9 @@ setTimeout(() => { ready = true; }, 200);
 await pollUntil(() => ready, 50, 1_000);
 
 const value = await withTimeout(Promise.resolve('ok'), 500);
+
+const measured = await measure(async () => fetch('https://example.com/data'));
+console.log(measured.result, measured.durationMs);
 
 const data = await retry(
 	async (attempt) => {
@@ -194,7 +204,7 @@ TimerManager.clearAll();
 Promise composition helpers, including detailed settled results and concurrency-limited execution.
 
 ```ts
-import { allSettledSuccessful, allSettledDetailed, sequential, pool, pMap } from '@depthbomb/common/promise';
+import { allSettledSuccessful, allSettledDetailed, sequential, pool, pMap, pFilter } from '@depthbomb/common/promise';
 
 const successful = await allSettledSuccessful([
 	Promise.resolve(1),
@@ -219,6 +229,7 @@ const pooled = await pool([
 ], { concurrency: 2 });
 
 const mapped = await pMap([1, 2, 3], async (v) => v * 10, { concurrency: 2 });
+const filtered = await pFilter([1, 2, 3, 4], async (v) => v % 2 === 0, { concurrency: 2 }); // [2, 4]
 ```
 
 ### `date`
@@ -251,6 +262,7 @@ const patched = date('2026-04-08T12:34:56.789Z')
 	.set({ year: 2027, month: 0, date: 1, hours: 8, minutes: 0, seconds: 0, milliseconds: 0 });
 
 const plainDate = value.toDate();
+const sameMonth = value.isSame('2026-04-30T23:59:59.999Z', DateUnit.Month); // true
 ```
 
 ### `state`
@@ -267,21 +279,24 @@ flag.reset();
 
 const retries = new ResettableValue(3);
 retries.set(1);
+retries.update(value => value + 1); // 2
 retries.reset(); // back to 3
 ```
 
 ### `functional`
 
-General function utilities such as `pipe` and `deprecate`.
+General function utilities such as `pipe`, `tap`, and `deprecate`.
 
 ```ts
-import { deprecate, pipe } from '@depthbomb/common/functional';
+import { deprecate, pipe, tap } from '@depthbomb/common/functional';
 
 const result = pipe(
 	2,
 	(value) => value + 1,
 	(value) => value * 3
 ); // 9
+
+const user = tap({ id: 42 }, value => console.log(value.id)); // returns the same object
 
 // Renamed deprecated function
 function parseUserIdLegacy(value: string) {
@@ -302,10 +317,10 @@ parseUserId('user_42'); // '42'
 
 ### `collections`
 
-A lightweight generic FIFO queue with `enqueue`, `dequeue`, `peek`, iteration support, and internal compaction to keep long-running usage efficient. Also includes `BoundedQueue` for fixed-capacity use cases.
+FIFO, bounded FIFO, and LIFO collections with iteration and snapshot helpers.
 
 ```ts
-import { Queue, BoundedQueue, BoundedQueueOverflow } from '@depthbomb/common/collections';
+import { Queue, Stack, BoundedQueue, BoundedQueueOverflow } from '@depthbomb/common/collections';
 
 const q = new Queue<number>([1, 2]);
 q.enqueue(3);
@@ -317,6 +332,10 @@ console.log(q.toArray()); // [2, 3]
 const bounded = new BoundedQueue<number>({ maxSize: 3, overflow: BoundedQueueOverflow.DropOldest }, [1, 2, 3]);
 bounded.enqueue(4);
 console.log(bounded.toArray()); // [2, 3, 4]
+
+const stack = new Stack(['first', 'second']);
+stack.push('third');
+console.log(stack.pop()); // 'third'
 ```
 
 ### `number`
@@ -324,13 +343,14 @@ console.log(bounded.toArray()); // [2, 3, 4]
 Numeric helpers for clamping, range checks, rounding, and aggregation.
 
 ```ts
-import { clamp, inRange, roundTo, sum, average } from '@depthbomb/common/number';
+import { clamp, inRange, roundTo, sum, average, median } from '@depthbomb/common/number';
 
 const bounded = clamp(12, 0, 10); // 10
 const valid = inRange(5, 1, 10); // true
 const rounded = roundTo(3.14159, 2); // 3.14
 const total = sum([1, 2, 3, 4]); // 10
 const mean = average([1, 2, 3, 4]); // 2.5
+const middle = median([9, 1, 4, 2]); // 3
 ```
 
 ### `random`
@@ -338,7 +358,7 @@ const mean = average([1, 2, 3, 4]); // 2.5
 Cross-environment random helpers for ranges and selection.
 
 ```ts
-import { randomFloat, randomInt, pickRandom, pickWeighted } from '@depthbomb/common/random';
+import { randomFloat, randomInt, pickRandom, pickWeighted, shuffle } from '@depthbomb/common/random';
 
 const f = randomFloat(5, 10); // 5 <= f < 10
 const i = randomInt(1, 6); // inclusive
@@ -348,6 +368,7 @@ const weighted = pickWeighted([
 	{ value: 'medium', weight: 3 },
 	{ value: 'large', weight: 6 },
 ]);
+const shuffled = shuffle(['a', 'b', 'c']); // new array; input is unchanged
 ```
 
 ### `guards`
@@ -360,6 +381,7 @@ import {
 	isArrayOf,
 	isDateLike,
 	isNonEmptyString,
+	isInteger,
 	isNumber,
 	isOneOf,
 	isString
@@ -390,15 +412,19 @@ const maybeCount: unknown = 42;
 if (isNumber(maybeCount)) {
 	console.log(maybeCount + 1);
 }
+
+if (isInteger(maybeCount)) {
+	console.log('whole number');
+}
 ```
 
 ### `typing`
 
-Shared type aliases and type-oriented helpers such as `Awaitable`, `Maybe`, `Nullable`, `ValueOf`, `NonEmptyArray`, `Brand`, `OptionalKeys`, `RequiredKeys`, JSON-related types, `cast`, `assume`, and `typedEntries`.
+Shared type aliases and type-oriented helpers such as `Awaitable`, `Maybe`, `Nullable`, `ValueOf`, `NonEmptyArray`, `Brand`, `OptionalKeys`, `RequiredKeys`, JSON-related types, `cast`, `assume`, `typedEntries`, and `typedKeys`.
 
 ```ts
 import {
-	cast, assume, typedEntries,
+	cast, assume, typedEntries, typedKeys,
 	type Awaitable, type Brand, type JsonValue, type Maybe, type NonEmptyArray,
 	type Nullable, type OptionalKeys, type RequiredKeys, type ValueOf
 } from '@depthbomb/common/typing';
@@ -409,6 +435,7 @@ const unknownValue: unknown = 'hello';
 assume<string>(unknownValue); // assertion helper
 
 const entries = typedEntries({ a: 1, b: 2 }); // typed key/value tuples
+const keys = typedKeys({ a: 1, b: 2 }); // Array<'a' | 'b'>
 
 const maybeName: Maybe<string> = undefined;
 const task: Awaitable<number> = Promise.resolve(1);
@@ -434,12 +461,39 @@ const usersUrl = api
 	.withQueryPatch({ page: 1 })
 	.appendQuery({ include: 'permissions' })
 	.withoutEmptyQuery()
+	.withPathname('/v2/users/42')
 	.withHash('details');
 
 const userPath = url`/users/${'john/doe'}/posts/${'my first post'}`;
 
 console.log(usersUrl.toString());
-// https://example.com/api/users/42?include=roles&include=profile#details
+// https://example.com/v2/users/42?include=roles&include=profile&page=1&include=permissions#details
 console.log(userPath);
 // /users/john%2Fdoe/posts/my%20first%20post
+```
+
+### `result`
+
+Discriminated success/failure values with mapping, exception capture, and unwrapping helpers.
+
+```ts
+import { err, ok, mapOk, tryCatchAsync, unwrap, unwrapOr } from '@depthbomb/common/result';
+
+const parsed = mapOk(ok('42'), Number);
+const value = unwrap(parsed); // 42
+const fallback = unwrapOr(err('missing'), error => error.length); // 7
+
+const response = await tryCatchAsync(() => fetch('https://example.com/data'));
+```
+
+### `extensions`
+
+Opt-in global extensions. Import this side-effect module explicitly; it is not loaded by the package root.
+
+```ts
+import '@depthbomb/common/extensions';
+
+String.empty(); // ''
+String.isEmpty(''); // true
+String.isEmpty('value'); // false
 ```
