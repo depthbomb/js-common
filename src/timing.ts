@@ -37,6 +37,12 @@ export interface IRetryOptions {
 	shouldRetry?: (error: unknown, attempt: number) => Awaitable<boolean>;
 }
 
+/** Result and elapsed wall-clock time from {@link measure}. */
+export interface IMeasurement<T> {
+	result: T;
+	durationMs: number;
+}
+
 const enum DurationUnit {
 	Years        = 'years',
 	Months       = 'months',
@@ -505,6 +511,13 @@ export const enum RetryJitter {
  */
 export function timeout(ms: number) {
 	return new Promise((res) => setTimeout(res, ms));
+}
+
+/** Execute an operation and return its result together with high-resolution elapsed time. */
+export async function measure<T>(operation: () => Awaitable<T>): Promise<IMeasurement<T>> {
+	const start = performance.now();
+	const result = await operation();
+	return { result, durationMs: performance.now() - start };
 }
 
 /**

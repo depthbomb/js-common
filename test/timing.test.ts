@@ -2,6 +2,7 @@ import { it, vi, expect, describe, afterEach } from 'vitest';
 import { sequential, allSettledSuccessful } from '../dist/promise.mjs';
 import {
 	retry,
+	measure,
 	timeout,
 	pollUntil,
 	withAbort,
@@ -15,6 +16,16 @@ import {
 } from '../dist/timing.mjs';
 
 describe('async utilities', () => {
+	it('measures sync and async operation results', async () => {
+		await expect(measure(() => 42)).resolves.toMatchObject({ result: 42 });
+		const measured = await measure(async () => {
+			await timeout(1);
+			return 'done';
+		});
+		expect(measured.result).toBe('done');
+		expect(measured.durationMs).toBeGreaterThanOrEqual(0);
+	});
+
 	it('timeout resolves asynchronously', async () => {
 		let completed = false;
 
