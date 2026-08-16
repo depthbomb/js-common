@@ -73,6 +73,19 @@ export function average(values: Iterable<number>): number {
 	return total / count;
 }
 
+/** Calculate the median value without mutating the input iterable. */
+export function median(values: Iterable<number>): number {
+	const sorted = [...values].sort((a, b) => a - b);
+	if (sorted.length === 0) {
+		throw new Error('cannot compute median of empty iterable');
+	}
+
+	const middle = Math.floor(sorted.length / 2);
+	return sorted.length % 2 === 1
+		? sorted[middle]!
+		: (sorted[middle - 1]! + sorted[middle]!) / 2;
+}
+
 function sumAndCount(values: Iterable<number>) {
 	let total = 0;
 	let count = 0;

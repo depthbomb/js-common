@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest';
-import { sum, clamp, average, inRange, roundTo } from '../dist/number.mjs';
+import { sum, clamp, median, average, inRange, roundTo } from '../dist/number.mjs';
 
 describe('number utilities', () => {
 	it('clamp bounds values to min/max', () => {
@@ -24,6 +24,14 @@ describe('number utilities', () => {
 	it('sum and average aggregate iterables', () => {
 		expect(sum([1, 2, 3, 4])).toBe(10);
 		expect(average([1, 2, 3, 4])).toBe(2.5);
+	});
+
+	it('computes odd and even medians without mutating input', () => {
+		const values = [9, 1, 4, 2];
+		expect(median(values)).toBe(3);
+		expect(median(new Set([7, 1, 3]))).toBe(3);
+		expect(values).toEqual([9, 1, 4, 2]);
+		expect(() => median([])).toThrow('cannot compute median of empty iterable');
 	});
 
 	it('validates invalid bounds and empty average', () => {
