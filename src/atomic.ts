@@ -330,6 +330,38 @@ export class Mutex {
 }
 
 /**
+ * A collection of mutexes keyed by resource identity.
+ *
+ * Entries are removed automatically once their work finishes, so transient keys do not remain
+ * in memory indefinitely.
+ */
+export class KeyedMutex<TKey> {
+	readonly #mutexes = new Map<TKey, Mutex>();
+
+	/** Number of keys that are currently active or queued. */
+	public get size() {
+		return this.#mutexes.size;
+	}
+
+	/** Run a task exclusively with respect to other tasks using the same key. */
+	public async runExclusive<T>(key: TKey, fn: () => Awaitable<T>): Promise<T> {
+		let mutex = this.#mutexes.get(key);
+		if (!mutex) {
+			mutex = new Mutex();
+			this.#mutexes.set(key, mutex);
+		}
+
+		try {
+			return await mutex.runExclusive(fn);
+		} finally {
+			if (!mutex.locked && mutex.pending === 0 && this.#mutexes.get(key) === mutex) {
+				this.#mutexes.delete(key);
+			}
+		}
+	}
+}
+
+/**
  * A counting semaphore for limiting concurrent access.
  */
 export class Semaphore {

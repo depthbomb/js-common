@@ -5,6 +5,7 @@ import {
 	swap,
 	Latch,
 	Mutex,
+	KeyedMutex,
 	Barrier,
 	deferred,
 	lazyAsync,
@@ -253,6 +254,31 @@ describe('atomic.Mutex', () => {
 		expect(mutex.locked).toBe(true);
 		await lease[Symbol.asyncDispose]();
 		expect(mutex.locked).toBe(false);
+	});
+});
+
+describe('atomic.KeyedMutex', () => {
+	it('serializes matching keys while allowing different keys to overlap', async () => {
+		const mutex = new KeyedMutex<string>();
+		const first = deferred<void>();
+		const events: string[] = [];
+
+		const a1 = mutex.runExclusive('a', async () => {
+			events.push('a1:start');
+			await first.promise;
+			events.push('a1:end');
+		});
+		const a2 = mutex.runExclusive('a', () => events.push('a2'));
+		const b = mutex.runExclusive('b', () => events.push('b'));
+
+		await b;
+		expect(events).toEqual(['a1:start', 'b']);
+		expect(mutex.size).toBe(1);
+
+		first.resolve();
+		await Promise.all([a1, a2]);
+		expect(events).toEqual(['a1:start', 'b', 'a1:end', 'a2']);
+		expect(mutex.size).toBe(0);
 	});
 });
 
