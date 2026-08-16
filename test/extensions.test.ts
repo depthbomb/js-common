@@ -6,3 +6,11 @@ describe('String.empty', () => {
 		expect(String.empty()).toBe('');
 	});
 });
+
+describe('String.isEmpty', () => {
+	it('only identifies the empty string', () => {
+		expect(String.isEmpty('')).toBe(true);
+		expect(String.isEmpty(' ')).toBe(false);
+		expect(String.isEmpty(null)).toBe(false);
+	});
+});
