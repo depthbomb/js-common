@@ -84,6 +84,15 @@ describe('date helper', () => {
 		expect(plain.toISOString()).toBe('2026-04-08T12:00:00.000Z');
 	});
 
+	it('compares dates by UTC calendar unit without mutating either value', () => {
+		const value = date('2026-04-08T23:00:00.000Z');
+
+		expect(value.isSame('2026-04-08T01:00:00.000Z', DateUnit.Day)).toBe(true);
+		expect(value.isSame('2026-04-09T00:00:00.000Z', DateUnit.Day)).toBe(false);
+		expect(value.isSame('2026-04-06T00:00:00.000Z', DateUnit.Week, { weekStartsOn: 1 })).toBe(true);
+		expect(value.toISOString()).toBe('2026-04-08T23:00:00.000Z');
+	});
+
 	it('throws on invalid date input and invalid weekStartsOn', () => {
 		expect(() => date('not-a-date')).toThrow('invalid date');
 		expect(() => date().startOf(DateUnit.Week, { weekStartsOn: 7 })).toThrow('weekStartsOn must be an integer from 0 to 6');

@@ -141,6 +141,12 @@ export class DateBuilder extends Date {
 	public endOf(unit: DateUnit, options: IDateBoundaryOptions = {}) {
 		return this.startOf(unit, options).add(getSingleUnitDelta(unit)).subtract({ milliseconds: 1 });
 	}
+
+	/** Return whether another date falls within the same UTC calendar unit. */
+	public isSame(other: DateLike, unit: DateUnit, options: IDateBoundaryOptions = {}): boolean {
+		return this.clone().startOf(unit, options).getTime()
+			=== new DateBuilder(other).startOf(unit, options).getTime();
+	}
 }
 
 /**
