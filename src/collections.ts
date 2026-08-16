@@ -69,7 +69,10 @@ export class Queue<T> {
 		}
 
 		const item = this.#items[this.#head++];
-		if (this.#head >= 64 && this.#head * 2 >= this.#items.length) {
+		if (this.#head === this.#items.length) {
+			this.#items = [];
+			this.#head = 0;
+		} else if (this.#head >= 64 && this.#head * 2 >= this.#items.length) {
 			this.#items = this.#items.slice(this.#head);
 			this.#head = 0;
 		}

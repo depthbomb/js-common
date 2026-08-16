@@ -554,8 +554,10 @@ export function singleFlight<TArgs extends unknown[], TResult>(
 			return existing;
 		}
 
-		const promise = Promise.resolve(fn(...args)).finally(() => {
-			inFlight.delete(key);
+		const promise = Promise.resolve().then(() => fn(...args)).finally(() => {
+			if (inFlight.get(key) === promise) {
+				inFlight.delete(key);
+			}
 		});
 
 		inFlight.set(key, promise);
@@ -595,8 +597,10 @@ export function memoizeAsync<TArgs extends unknown[], TResult>(
 			return existing;
 		}
 
-		const promise = Promise.resolve(fn(...args)).catch((error) => {
-			cache.delete(key);
+		const promise = Promise.resolve().then(() => fn(...args)).catch((error) => {
+			if (cache.get(key) === promise) {
+				cache.delete(key);
+			}
 			throw error;
 		});
 
@@ -754,10 +758,13 @@ export function lazyAsync<T>(factory: () => Promise<T>): () => Promise<T> {
 
 	return () => {
 		if (!promise) {
-			promise = factory().catch((error) => {
-				promise = undefined;
+			const current = Promise.resolve().then(factory).catch((error) => {
+				if (promise === current) {
+					promise = undefined;
+				}
 				throw error;
 			});
+			promise = current;
 		}
 
 		return promise;
@@ -799,10 +806,13 @@ export function resettableLazyAsync<T>(factory: () => Promise<T>) {
 
 	function get() {
 		if (!promise) {
-			promise = factory().catch((error) => {
-				promise = undefined;
+			const current = Promise.resolve().then(factory).catch((error) => {
+				if (promise === current) {
+					promise = undefined;
+				}
 				throw error;
 			});
+			promise = current;
 		}
 
 		return promise;

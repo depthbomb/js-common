@@ -214,6 +214,13 @@ describe('cancellation helpers', () => {
 });
 
 describe('duration parsing', () => {
+	it('accepts a recognized zero-valued duration', () => {
+		const duration = parseDuration('0ms');
+
+		expect(duration.milliseconds).toBe(0);
+		expect(duration.toHumanString()).toBe('0 milliseconds');
+	});
+
 	it('parses compact duration strings and exposes fixed milliseconds', () => {
 		const duration = parseDuration('2h30m15s250ms');
 

@@ -175,15 +175,17 @@ export function parseDuration(input: string): Duration {
 		seconds: 0,
 		milliseconds: 0
 	};
+	let matched = false;
 
 	for (const match of input.matchAll(DURATION_TOKEN_PATTERN)) {
+		matched = true;
 		const amount = Number.parseInt(match[1]!, 10);
 		const unit   = normalizeDurationUnit(match[2]!);
 
 		parts[unit] += amount;
 	}
 
-	if (Object.values(parts).every((value) => value === 0)) {
+	if (!matched) {
 		throw new Error('duration string did not contain any recognized units');
 	}
 

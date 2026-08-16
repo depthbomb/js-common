@@ -136,6 +136,24 @@ describe('atomic.resettableLazyAsync', () => {
 		await expect(holder.get()).resolves.toBe('ok');
 		expect(calls).toBe(2);
 	});
+
+	it('does not let a reset older rejection clear the replacement promise', async () => {
+		const first = deferred<string>();
+		const second = deferred<string>();
+		let calls = 0;
+		const holder = resettableLazyAsync(() => ++calls === 1 ? first.promise : second.promise);
+
+		const oldCall = holder.get();
+		holder.reset();
+		const newCall = holder.get();
+		first.reject(new Error('old'));
+		await expect(oldCall).rejects.toThrow('old');
+
+		expect(holder.get()).toBe(newCall);
+		second.resolve('new');
+		await expect(newCall).resolves.toBe('new');
+		expect(calls).toBe(2);
+	});
 });
 
 describe('atomic.Mutex', () => {
@@ -423,6 +441,32 @@ describe('atomic.singleFlight', () => {
 		expect(calls).toBe(2);
 		expect(load.pending).toBe(0);
 	});
+
+	it('does not let a cleared older call evict a newer call with the same key', async () => {
+		const first = deferred<string>();
+		const second = deferred<string>();
+		let calls = 0;
+		const load = singleFlight(() => ++calls === 1 ? first.promise : second.promise);
+
+		const oldCall = load();
+		load.clear();
+		const newCall = load();
+		first.resolve('old');
+		await expect(oldCall).resolves.toBe('old');
+
+		expect(load()).toBe(newCall);
+		second.resolve('new');
+		await expect(newCall).resolves.toBe('new');
+		expect(calls).toBe(2);
+	});
+
+	it('converts a synchronous throw into a rejected promise', async () => {
+		const load = singleFlight(() => {
+			throw new Error('sync');
+		});
+
+		await expect(load()).rejects.toThrow('sync');
+	});
 });
 
 describe('atomic.onceAsync', () => {
@@ -460,6 +504,24 @@ describe('atomic.memoizeAsync', () => {
 		await expect(load('bad')).resolves.toBe('value:bad:2');
 		await expect(load('bad')).resolves.toBe('value:bad:2');
 		expect(load.size).toBe(1);
+		expect(calls).toBe(2);
+	});
+
+	it('does not let an older rejection evict a replacement entry', async () => {
+		const first = deferred<string>();
+		const second = deferred<string>();
+		let calls = 0;
+		const load = memoizeAsync(() => ++calls === 1 ? first.promise : second.promise);
+
+		const oldCall = load();
+		load.clear();
+		const newCall = load();
+		first.reject(new Error('old'));
+		await expect(oldCall).rejects.toThrow('old');
+
+		expect(load()).toBe(newCall);
+		second.resolve('new');
+		await expect(newCall).resolves.toBe('new');
 		expect(calls).toBe(2);
 	});
 });
