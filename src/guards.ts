@@ -40,6 +40,11 @@ export function isNumber(value: unknown): value is number {
 	return typeof value === 'number' && Number.isFinite(value);
 }
 
+/** Returns `true` when `value` is a finite integer. */
+export function isInteger(value: unknown): value is number {
+	return isNumber(value) && Number.isInteger(value);
+}
+
 /**
  * Returns `true` when `value` is a finite number greater than `0`.
  *
@@ -245,6 +250,7 @@ export const is = {
 	string: isString,
 	nonEmptyString: isNonEmptyString,
 	number: isNumber,
+	integer: isInteger,
 	positiveNumber: isPositiveNumber,
 	record: isRecord,
 	arrayOf: isArrayOf,

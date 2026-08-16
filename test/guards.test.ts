@@ -10,6 +10,7 @@ import {
 	isOneOf,
 	hasShape,
 	isNumber,
+	isInteger,
 	isRecord,
 	isString,
 	isTruthy,
@@ -25,6 +26,13 @@ import {
 } from '../dist/guards.mjs';
 
 describe('guards', () => {
+	it('isInteger matches finite integers and is exposed through the namespace', () => {
+		expect(isInteger(3)).toBe(true);
+		expect(isInteger(3.5)).toBe(false);
+		expect(isInteger(Infinity)).toBe(false);
+		expect(is.integer(-2)).toBe(true);
+	});
+
 	it('isString matches only string values', () => {
 		expect(isString('hello')).toBe(true);
 		expect(isString('')).toBe(true);
