@@ -19,5 +19,15 @@ describe('root ESM entrypoint', () => {
 		expect(common.once).toBeTypeOf('function');
 		expect(common.onceAsync).toBeTypeOf('function');
 		expect(common.ok).toBeTypeOf('function');
+		expect(common.KeyedMutex).toBeTypeOf('function');
+		expect(common.Stack).toBeTypeOf('function');
+		expect(common.tap).toBeTypeOf('function');
+		expect(common.isInteger).toBeTypeOf('function');
+		expect(common.median).toBeTypeOf('function');
+		expect(common.pFilter).toBeTypeOf('function');
+		expect(common.shuffle).toBeTypeOf('function');
+		expect(common.unwrap).toBeTypeOf('function');
+		expect(common.measure).toBeTypeOf('function');
+		expect(common.typedKeys).toBeTypeOf('function');
 	});
 });
