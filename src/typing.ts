@@ -121,7 +121,7 @@ export type DeepPartial<T> = T extends object ? { [K in keyof T]?: DeepPartial<T
  * @typeParam T - Object type to inspect.
  */
 export type OptionalKeys<T extends object> = {
-	// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+	// oxlint-disable-next-line typescript/no-empty-object-type
 	[K in keyof T]-?: {} extends Pick<T, K> ? K : never;
 }[keyof T];
 /**

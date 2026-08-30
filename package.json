@@ -46,22 +46,16 @@
 		"dist": "tsdown",
 		"typecheck": "yarn dist && tsc -p tsconfig.json --noEmit",
 		"release": "yarn dist && release-it",
-		"lint": "eslint ./src ./test --ext .ts",
+		"lint": "oxlint ./src ./test",
 		"test": "yarn dist && vitest --run"
 	},
 	"devDependencies": {
-		"@eslint/eslintrc": "^3.3.6",
-		"@eslint/js": "^10.0.1",
-		"@types/eslint": "^9.6.1",
 		"@types/node": "^24.13.3",
-		"@typescript-eslint/eslint-plugin": "^8.67.0",
-		"@typescript-eslint/parser": "^8.67.0",
-		"eslint": "^10.8.1",
-		"globals": "^17.11.0",
+		"oxlint": "^1.80.0",
 		"release-it": "^21.0.2",
 		"tsdown": "^0.22.14",
 		"typescript": "^6.0.3",
-		"vitest": "^4.1.10"
+		"vitest": "^4.1.11"
 	},
 	"packageManager": "yarn@4.18.0"
 }
