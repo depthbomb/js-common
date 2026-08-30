@@ -116,6 +116,26 @@ compareAndSet(box, 'a', 'b');
 swap(box, 'c');
 ```
 
+### `channel`
+
+Async producer/consumer channels with bounded backpressure, cancellation, graceful closure, and async iteration.
+
+```ts
+import { Channel } from '@depthbomb/common/channel';
+
+const jobs = new Channel<Job>({ capacity: 10 });
+
+const worker = (async () => {
+	for await (const job of jobs) {
+		await process(job);
+	}
+})();
+
+await jobs.send({ id: 1 });
+jobs.close();
+await worker;
+```
+
 ### `timing`
 
 Timing and timeout flow-control helpers.

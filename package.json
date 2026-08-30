@@ -13,6 +13,7 @@
 	"exports": {
 		".": "./dist/index.mjs",
 		"./atomic": "./dist/atomic.mjs",
+		"./channel": "./dist/channel.mjs",
 		"./collections": "./dist/collections.mjs",
 		"./date": "./dist/date.mjs",
 		"./extensions": "./dist/extensions.mjs",
