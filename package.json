@@ -15,6 +15,7 @@
 		"./atomic": "./dist/atomic.mjs",
 		"./cache": "./dist/cache.mjs",
 		"./channel": "./dist/channel.mjs",
+		"./circuit-breaker": "./dist/circuit-breaker.mjs",
 		"./collections": "./dist/collections.mjs",
 		"./date": "./dist/date.mjs",
 		"./extensions": "./dist/extensions.mjs",

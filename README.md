@@ -152,6 +152,24 @@ const user = await users.getOrSetAsync('42', () => fetchUser('42'));
 users.delete('42');
 ```
 
+### `circuit-breaker`
+
+Failure isolation with closed, open, and half-open states, recovery probes, fallbacks, and metrics.
+
+```ts
+import { CircuitBreaker } from '@depthbomb/common/circuit-breaker';
+
+const breaker = new CircuitBreaker({
+	failureThreshold: 5,
+	resetAfterMs: 30_000
+});
+
+const response = await breaker.execute(
+	() => fetch('https://example.com/data'),
+	{ fallback: () => new Response(null, { status: 503 }) }
+);
+```
+
 ### `timing`
 
 Timing and timeout flow-control helpers.

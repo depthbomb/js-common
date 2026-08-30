@@ -1,6 +1,7 @@
 export * from './atomic';
 export * from './cache';
 export * from './channel';
+export * from './circuit-breaker';
 export * from './collections';
 export * from './date';
 export * from './functional';
