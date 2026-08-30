@@ -448,6 +448,32 @@ await using lease = await pool.acquire({ signal });
 await lease.value.query('SELECT 1');
 ```
 
+### `emitter`
+
+Strongly typed async publish/subscribe with one-shot and abortable listeners, aggregated failures, and event streams.
+
+```ts
+import { Emitter } from '@depthbomb/common/emitter';
+
+interface Events {
+	progress: { completed: number; total: number };
+	done: void;
+}
+
+const emitter = new Emitter<Events>();
+const unsubscribe = emitter.on('progress', event => {
+	console.log(event.completed, event.total);
+});
+
+await emitter.emit('progress', { completed: 1, total: 10 });
+
+for await (const event of emitter.events('progress', { signal })) {
+	console.log(event.completed);
+}
+
+unsubscribe();
+```
+
 ### `number`
 
 Numeric helpers for clamping, range checks, rounding, and aggregation.

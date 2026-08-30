@@ -4,6 +4,7 @@ export * from './channel';
 export * from './circuit-breaker';
 export * from './collections';
 export * from './date';
+export * from './emitter';
 export * from './functional';
 export * from './guards';
 export * from './iterable';

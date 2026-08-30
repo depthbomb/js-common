@@ -18,6 +18,7 @@
 		"./circuit-breaker": "./dist/circuit-breaker.mjs",
 		"./collections": "./dist/collections.mjs",
 		"./date": "./dist/date.mjs",
+		"./emitter": "./dist/emitter.mjs",
 		"./extensions": "./dist/extensions.mjs",
 		"./functional": "./dist/functional.mjs",
 		"./guards": "./dist/guards.mjs",
