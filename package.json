@@ -26,6 +26,7 @@
 		"./promise": "./dist/promise.mjs",
 		"./random": "./dist/random.mjs",
 		"./rate-limiter": "./dist/rate-limiter.mjs",
+		"./resource-pool": "./dist/resource-pool.mjs",
 		"./result": "./dist/result.mjs",
 		"./state": "./dist/state.mjs",
 		"./timing": "./dist/timing.mjs",

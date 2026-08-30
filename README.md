@@ -426,6 +426,28 @@ const pairs = [...zip(['a', 'b'], [1, 2])];
 const windows = [...windowed([1, 2, 3, 4], 3)];
 ```
 
+### `resource-pool`
+
+Bounded resource reuse with validation, idle expiration, cancellation, graceful draining, and async-disposable leases.
+
+```ts
+import { ResourcePool } from '@depthbomb/common/resource-pool';
+
+await using pool = new ResourcePool({
+	minSize: 2,
+	maxSize: 8,
+	idleTimeoutMs: 30_000,
+	create: () => connect(),
+	destroy: connection => connection.close(),
+	validate: connection => connection.isHealthy
+});
+
+await pool.warm();
+
+await using lease = await pool.acquire({ signal });
+await lease.value.query('SELECT 1');
+```
+
 ### `number`
 
 Numeric helpers for clamping, range checks, rounding, and aggregation.

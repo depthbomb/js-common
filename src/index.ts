@@ -11,6 +11,7 @@ export * from './number';
 export * from './promise';
 export * from './random';
 export * from './rate-limiter';
+export * from './resource-pool';
 export * from './result';
 export * from './state';
 export * from './timing';
