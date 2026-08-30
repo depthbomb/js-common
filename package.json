@@ -24,6 +24,7 @@
 		"./number": "./dist/number.mjs",
 		"./promise": "./dist/promise.mjs",
 		"./random": "./dist/random.mjs",
+		"./rate-limiter": "./dist/rate-limiter.mjs",
 		"./result": "./dist/result.mjs",
 		"./state": "./dist/state.mjs",
 		"./timing": "./dist/timing.mjs",

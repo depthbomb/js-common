@@ -170,6 +170,25 @@ const response = await breaker.execute(
 );
 ```
 
+### `rate-limiter`
+
+Fair token-bucket rate limiting with bursts, bounded waiting queues, cancellation, and scheduled execution.
+
+```ts
+import { RateLimiter } from '@depthbomb/common/rate-limiter';
+
+using limiter = new RateLimiter({
+	limit: 10,
+	intervalMs: 1_000,
+	burst: 3
+});
+
+const response = await limiter.schedule(
+	() => fetch('https://example.com/data'),
+	{ signal }
+);
+```
+
 ### `timing`
 
 Timing and timeout flow-control helpers.
