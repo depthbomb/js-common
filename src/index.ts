@@ -1,4 +1,5 @@
 export * from './atomic';
+export * from './cache';
 export * from './channel';
 export * from './collections';
 export * from './date';

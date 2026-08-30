@@ -136,6 +136,22 @@ jobs.close();
 await worker;
 ```
 
+### `cache`
+
+Bounded least-recently-used caching with expiration, lazy population, and eviction notifications.
+
+```ts
+import { LRUCache } from '@depthbomb/common/cache';
+
+const users = new LRUCache<string, User>({
+	maxSize: 500,
+	ttlMs: 60_000
+});
+
+const user = await users.getOrSetAsync('42', () => fetchUser('42'));
+users.delete('42');
+```
+
 ### `timing`
 
 Timing and timeout flow-control helpers.
