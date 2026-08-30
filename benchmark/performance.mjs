@@ -2,22 +2,88 @@ import { performance } from 'node:perf_hooks';
 import { Channel } from '../dist/channel.mjs';
 import { LRUCache } from '../dist/cache.mjs';
 import { CircuitBreaker } from '../dist/circuit-breaker.mjs';
+import { Mutex, ReadWriteLock, Semaphore } from '../dist/atomic.mjs';
+import { Queue, Stack } from '../dist/collections.mjs';
+import { DateUnit, date } from '../dist/date.mjs';
 import { Emitter } from '../dist/emitter.mjs';
+import { pipe } from '../dist/functional.mjs';
+import { hasShape, isInteger, isString } from '../dist/guards.mjs';
 import { range, windowed } from '../dist/iterable.mjs';
+import { average, sum } from '../dist/number.mjs';
+import { allSettledSuccessful, pMap } from '../dist/promise.mjs';
+import { pickRandom, shuffle } from '../dist/random.mjs';
 import { RateLimiter } from '../dist/rate-limiter.mjs';
 import { ResourcePool } from '../dist/resource-pool.mjs';
+import { mapOk, ok, unwrap } from '../dist/result.mjs';
+import { formatDuration, parseDuration } from '../dist/timing.mjs';
+import { URLPath } from '../dist/url.mjs';
 
 const scale = Number.parseInt(process.env.BENCH_SCALE ?? '50000', 10);
 const rounds = Number.parseInt(process.env.BENCH_ROUNDS ?? '7', 10);
 const warmups = Number.parseInt(process.env.BENCH_WARMUPS ?? '2', 10);
 const filter = process.env.BENCH_FILTER;
 const cacheSize = Math.max(1, Math.floor(scale / 2));
+const numericValues = [...range(scale)];
+const increment = value => value + 1;
+const double = value => value * 2;
+const userShape = { id: isInteger, name: isString };
 
 if (![scale, rounds, warmups].every(Number.isInteger) || scale < 1 || rounds < 1 || warmups < 0) {
 	throw new Error('BENCH_SCALE and BENCH_ROUNDS must be positive integers; BENCH_WARMUPS must be non-negative');
 }
 
 const benchmarks = [
+	{
+		name: 'atomic: mutex contention',
+		operations: scale,
+		async run() {
+			const mutex = new Mutex();
+			const first = await mutex.acquire();
+			let checksum = 0;
+			const queued = Array.from({ length: scale }, (_, value) => mutex.runExclusive(() => {
+				checksum += value;
+			}));
+
+			assertEqual(mutex.pending, scale);
+			await first.release();
+			await Promise.all(queued);
+			assertEqual(checksum, scale * (scale - 1) / 2);
+		}
+	},
+	{
+		name: 'atomic: semaphore contention',
+		operations: scale,
+		async run() {
+			const semaphore = new Semaphore(1);
+			const first = await semaphore.acquire();
+			let checksum = 0;
+			const queued = Array.from({ length: scale }, (_, value) => semaphore.runExclusive(() => {
+				checksum += value;
+			}));
+
+			assertEqual(semaphore.pending, scale);
+			await first.release();
+			await Promise.all(queued);
+			assertEqual(checksum, scale * (scale - 1) / 2);
+		}
+	},
+	{
+		name: 'atomic: write lock contention',
+		operations: scale,
+		async run() {
+			const lock = new ReadWriteLock();
+			const first = await lock.acquireWrite();
+			let checksum = 0;
+			const queued = Array.from({ length: scale }, (_, value) => lock.runWrite(() => {
+				checksum += value;
+			}));
+
+			assertEqual(lock.pending, scale);
+			await first.release();
+			await Promise.all(queued);
+			assertEqual(checksum, scale * (scale - 1) / 2);
+		}
+	},
 	{
 		name: 'channel: buffered send/receive',
 		operations: scale * 2,
@@ -35,6 +101,83 @@ const benchmarks = [
 			}
 
 			assertEqual(checksum, scale * (scale - 1) / 2);
+		}
+	},
+	{
+		name: 'collections: queue round trip',
+		operations: scale * 2,
+		run() {
+			const queue = new Queue();
+
+			for (let value = 0; value < scale; value++) {
+				queue.enqueue(value);
+			}
+
+			let checksum = 0;
+
+			while (!queue.isEmpty) {
+				checksum += queue.dequeue();
+			}
+
+			assertEqual(checksum, scale * (scale - 1) / 2);
+		}
+	},
+	{
+		name: 'collections: stack iteration',
+		operations: scale * 2,
+		run() {
+			const stack = new Stack(numericValues);
+			let checksum = 0;
+
+			for (const value of stack) {
+				checksum += value;
+			}
+
+			assertEqual(checksum, scale * (scale - 1) / 2);
+		}
+	},
+	{
+		name: 'date: chained UTC operations',
+		operations: scale,
+		run() {
+			let checksum = 0;
+
+			for (let value = 0; value < scale; value++) {
+				checksum += date(1_700_000_000_000 + value)
+					.add({ months: 1, days: 2 })
+					.startOf(DateUnit.Day)
+					.getUTCFullYear();
+			}
+
+			assertEqual(checksum > 0, true);
+		}
+	},
+	{
+		name: 'functional: pipe composition',
+		operations: scale,
+		run() {
+			let checksum = 0;
+
+			for (let value = 0; value < scale; value++) {
+				checksum += pipe(value, increment, double);
+			}
+
+			assertEqual(checksum, scale ** 2 + scale);
+		}
+	},
+	{
+		name: 'guards: object shape checks',
+		operations: scale,
+		run() {
+			let matches = 0;
+
+			for (let value = 0; value < scale; value++) {
+				if (hasShape({ id: value, name: 'user' }, userShape)) {
+					matches++;
+				}
+			}
+
+			assertEqual(matches, scale);
 		}
 	},
 	{
@@ -135,6 +278,57 @@ const benchmarks = [
 		}
 	},
 	{
+		name: 'number: sum and average',
+		operations: scale * 2,
+		run() {
+			assertEqual(sum(numericValues), scale * (scale - 1) / 2);
+			assertEqual(average(numericValues), (scale - 1) / 2);
+		}
+	},
+	{
+		name: 'promise: settled success filtering',
+		operations: scale,
+		async run() {
+			const values = await allSettledSuccessful(numericValues);
+
+			assertEqual(values.length, scale);
+			assertEqual(values.at(-1), scale - 1);
+		}
+	},
+	{
+		name: 'promise: concurrent mapping',
+		operations: scale,
+		async run() {
+			const values = await pMap(numericValues, increment, { concurrency: 64 });
+
+			assertEqual(values.length, scale);
+			assertEqual(values.at(-1), scale);
+		}
+	},
+	{
+		name: 'random: array selection',
+		operations: scale,
+		run() {
+			let checksum = 0;
+
+			for (let index = 0; index < scale; index++) {
+				checksum += pickRandom(numericValues);
+			}
+
+			assertEqual(checksum >= 0, true);
+		}
+	},
+	{
+		name: 'random: immutable shuffle',
+		operations: scale,
+		run() {
+			const values = shuffle(numericValues);
+
+			assertEqual(values.length, scale);
+			assertEqual(numericValues[0], 0);
+		}
+	},
+	{
 		name: 'resource pool: sequential reuse',
 		operations: scale,
 		async run() {
@@ -181,6 +375,51 @@ const benchmarks = [
 			}
 
 			assertEqual(checksum, scale * (scale - 1) / 2);
+		}
+	},
+	{
+		name: 'result: map and unwrap',
+		operations: scale,
+		run() {
+			let checksum = 0;
+
+			for (let value = 0; value < scale; value++) {
+				checksum += unwrap(mapOk(ok(value), increment));
+			}
+
+			assertEqual(checksum, scale * (scale + 1) / 2);
+		}
+	},
+	{
+		name: 'timing: duration parse and format',
+		operations: scale * 2,
+		run() {
+			let checksum = 0;
+
+			for (let value = 0; value < scale; value++) {
+				checksum += parseDuration('2h 30m 15s').milliseconds;
+				checksum += formatDuration(9_015_000, { precision: 2 }).length;
+			}
+
+			assertEqual(checksum > 0, true);
+		}
+	},
+	{
+		name: 'url: immutable path and query chains',
+		operations: scale,
+		run() {
+			let checksum = 0;
+
+			for (let value = 0; value < scale; value++) {
+				checksum += new URLPath('https://example.com/api')
+					.joinpath('users', String(value))
+					.withQuery({ include: ['roles', 'profile'], page: value })
+					.withHash('details')
+					.toString()
+					.length;
+			}
+
+			assertEqual(checksum > 0, true);
 		}
 	}
 ];

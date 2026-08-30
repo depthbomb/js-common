@@ -198,6 +198,23 @@ describe('atomic.Mutex', () => {
 		expect(mutex.pending).toBe(0);
 	});
 
+	it('preserves FIFO order across waiter compaction boundaries', async () => {
+		const mutex = new Mutex();
+		const first = await mutex.acquire();
+		const count = 200;
+		const order: number[] = [];
+		const queued = Array.from({ length: count }, (_, value) => mutex.runExclusive(() => {
+			order.push(value);
+		}));
+
+		expect(mutex.pending).toBe(count);
+		await first.release();
+		await Promise.all(queued);
+
+		expect(order).toEqual(Array.from({ length: count }, (_, value) => value));
+		expect(mutex.pending).toBe(0);
+	});
+
 	it('supports await using with an acquired lease', async () => {
 		const mutex = new Mutex();
 

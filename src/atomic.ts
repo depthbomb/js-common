@@ -2,8 +2,44 @@ import type { Maybe, Awaitable } from './typing';
 
 type AnyFn          = (...args: never[]) => unknown;
 type AnyAwaitableFn = (...args: never[]) => Awaitable<unknown>;
+type ReadWriteWaiter = { kind: 'read' | 'write'; resolve: (lease: IReadWriteLease) => void };
 
 const SINGLE_FLIGHT_KEY = Symbol('singleFlight');
+
+class WaitQueue<T> {
+	#head = 0;
+	readonly #items: T[] = [];
+
+	public get size() {
+		return this.#items.length - this.#head;
+	}
+
+	public push(value: T): void {
+		this.#items.push(value);
+	}
+
+	public peek(): Maybe<T> {
+		return this.#items[this.#head];
+	}
+
+	public shift(): Maybe<T> {
+		if (this.#head >= this.#items.length) {
+			return undefined;
+		}
+
+		const value = this.#items[this.#head++];
+
+		if (this.#head === this.#items.length) {
+			this.#items.length = 0;
+			this.#head = 0;
+		} else if (this.#head >= 64 && this.#head * 2 >= this.#items.length) {
+			this.#items.splice(0, this.#head);
+			this.#head = 0;
+		}
+
+		return value;
+	}
+}
 
 /**
  * A deferred promise with externally controlled settlement.
@@ -259,7 +295,7 @@ export class Barrier {
  */
 export class Mutex {
 	#locked = false;
-	#waiters: Array<() => void> = [];
+	readonly #waiters = new WaitQueue<() => void>();
 
 	/**
 	 * Whether the mutex is currently held.
@@ -272,7 +308,7 @@ export class Mutex {
 	 * Number of queued acquirers waiting for the mutex.
 	 */
 	public get pending() {
-		return this.#waiters.length;
+		return this.#waiters.size;
 	}
 
 	/**
@@ -365,9 +401,9 @@ export class KeyedMutex<TKey> {
  * A counting semaphore for limiting concurrent access.
  */
 export class Semaphore {
-	readonly #capacity: number;
 	#available: number;
-	#waiters: Array<() => void> = [];
+	readonly #capacity: number;
+	readonly #waiters = new WaitQueue<() => void>();
 
 	public constructor(capacity: number) {
 		if (!Number.isInteger(capacity) || capacity < 1) {
@@ -396,7 +432,7 @@ export class Semaphore {
 	 * Number of queued acquirers waiting for a permit.
 	 */
 	public get pending() {
-		return this.#waiters.length;
+		return this.#waiters.size;
 	}
 
 	/**
@@ -450,7 +486,7 @@ export class Semaphore {
 export class ReadWriteLock {
 	#activeReaders = 0;
 	#activeWriter = false;
-	#queue: Array<{ kind: 'read' | 'write'; resolve: (lease: IReadWriteLease) => void }> = [];
+	readonly #queue = new WaitQueue<ReadWriteWaiter>();
 
 	/**
 	 * Number of active readers currently holding the lock.
@@ -470,14 +506,14 @@ export class ReadWriteLock {
 	 * Number of queued readers and writers waiting for the lock.
 	 */
 	public get pending() {
-		return this.#queue.length;
+		return this.#queue.size;
 	}
 
 	/**
 	 * Acquire a read lease.
 	 */
 	public async acquireRead(): Promise<IReadWriteLease> {
-		if (!this.#activeWriter && this.#queue.length === 0) {
+		if (!this.#activeWriter && this.#queue.size === 0) {
 			this.#activeReaders++;
 			return this.#createLease('read');
 		}
@@ -491,7 +527,7 @@ export class ReadWriteLock {
 	 * Acquire a write lease.
 	 */
 	public async acquireWrite(): Promise<IReadWriteLease> {
-		if (!this.#activeWriter && this.#activeReaders === 0 && this.#queue.length === 0) {
+		if (!this.#activeWriter && this.#activeReaders === 0 && this.#queue.size === 0) {
 			this.#activeWriter = true;
 			return this.#createLease('write');
 		}
@@ -548,18 +584,18 @@ export class ReadWriteLock {
 	}
 
 	#drain() {
-		if (this.#activeWriter || this.#activeReaders > 0 || this.#queue.length === 0) {
+		if (this.#activeWriter || this.#activeReaders > 0 || this.#queue.size === 0) {
 			return;
 		}
 
-		if (this.#queue[0].kind === 'write') {
+		if (this.#queue.peek()?.kind === 'write') {
 			const waiter = this.#queue.shift()!;
 			this.#activeWriter = true;
 			waiter.resolve(this.#createLease('write'));
 			return;
 		}
 
-		while (this.#queue[0]?.kind === 'read') {
+		while (this.#queue.peek()?.kind === 'read') {
 			const waiter = this.#queue.shift()!;
 			this.#activeReaders++;
 			waiter.resolve(this.#createLease('read'));
