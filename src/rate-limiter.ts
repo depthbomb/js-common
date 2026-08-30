@@ -42,6 +42,7 @@ export class RateLimiter implements Disposable {
 	readonly #burst: number;
 	readonly #queueLimit: number;
 	readonly #waiters: IRateLimitWaiter[] = [];
+	#waiterHead = 0;
 	#tokens: number;
 	#updatedAt = Date.now();
 	#timer?: ReturnType<typeof setTimeout>;
@@ -70,7 +71,7 @@ export class RateLimiter implements Disposable {
 	public get limit() { return this.#limit; }
 	public get intervalMs() { return this.#intervalMs; }
 	public get burst() { return this.#burst; }
-	public get pending() { return this.#waiters.length; }
+	public get pending() { return this.#waiters.length - this.#waiterHead; }
 	public get disposed() { return this.#disposed; }
 
 	public get available() {
@@ -84,13 +85,13 @@ export class RateLimiter implements Disposable {
 		this.#throwIfUnavailable(options.signal);
 		this.#refill();
 
-		if (this.#waiters.length === 0 && this.#tokens >= 1) {
+		if (this.pending === 0 && this.#tokens >= 1) {
 			this.#tokens--;
 
 			return;
 		}
 
-		if (this.#waiters.length >= this.#queueLimit) {
+		if (this.pending >= this.#queueLimit) {
 			throw new RateLimitQueueFullError();
 		}
 
@@ -123,7 +124,9 @@ export class RateLimiter implements Disposable {
 	public clear(error: unknown = new RateLimiterClearedError()): void {
 		this.#clearTimer();
 
-		for (const waiter of this.#waiters.splice(0)) {
+		let waiter: IRateLimitWaiter | undefined;
+
+		while ((waiter = this.#dequeueWaiter())) {
 			waiter.cleanup();
 			waiter.reject(error);
 		}
@@ -146,7 +149,7 @@ export class RateLimiter implements Disposable {
 			cleanup: () => signal?.removeEventListener('abort', onAbort)
 		};
 		const onAbort = () => {
-			const index = this.#waiters.indexOf(waiter);
+			const index = this.#waiters.indexOf(waiter, this.#waiterHead);
 
 			if (index >= 0) {
 				this.#waiters.splice(index, 1);
@@ -177,8 +180,8 @@ export class RateLimiter implements Disposable {
 		this.#clearTimer();
 		this.#refill();
 
-		while (this.#tokens >= 1 && this.#waiters.length > 0) {
-			const waiter = this.#waiters.shift()!;
+		while (this.#tokens >= 1 && this.pending > 0) {
+			const waiter = this.#dequeueWaiter()!;
 			this.#tokens--;
 			waiter.cleanup();
 			waiter.resolve();
@@ -188,13 +191,17 @@ export class RateLimiter implements Disposable {
 	}
 
 	#schedule(): void {
-		this.#clearTimer();
+		if (this.pending === 0 || this.#disposed) {
+			this.#clearTimer();
 
-		if (this.#waiters.length === 0 || this.#disposed) {
 			return;
 		}
 
 		this.#refill();
+
+		if (this.#timer !== undefined) {
+			return;
+		}
 
 		if (this.#tokens >= 1) {
 			this.#timer = setTimeout(() => this.#drain(), 0);
@@ -204,6 +211,24 @@ export class RateLimiter implements Disposable {
 
 		const delay = Math.ceil((1 - this.#tokens) * this.#intervalMs / this.#limit);
 		this.#timer = setTimeout(() => this.#drain(), delay);
+	}
+
+	#dequeueWaiter(): IRateLimitWaiter | undefined {
+		if (this.#waiterHead >= this.#waiters.length) {
+			return undefined;
+		}
+
+		const waiter = this.#waiters[this.#waiterHead++];
+
+		if (this.#waiterHead === this.#waiters.length) {
+			this.#waiters.length = 0;
+			this.#waiterHead = 0;
+		} else if (this.#waiterHead >= 64 && this.#waiterHead * 2 >= this.#waiters.length) {
+			this.#waiters.splice(0, this.#waiterHead);
+			this.#waiterHead = 0;
+		}
+
+		return waiter;
 	}
 
 	#clearTimer(): void {

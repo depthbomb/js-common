@@ -53,7 +53,8 @@
 		"dist": "tsdown",
 		"typecheck": "yarn dist && tsc -p tsconfig.json --noEmit",
 		"release": "yarn dist && release-it",
-		"lint": "oxlint ./src ./test",
+		"lint": "oxlint ./benchmark ./src ./test",
+		"benchmark": "yarn dist && node --expose-gc benchmark/performance.mjs",
 		"test": "yarn dist && vitest --run"
 	},
 	"devDependencies": {

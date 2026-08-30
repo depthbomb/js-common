@@ -30,6 +30,32 @@ describe('ResourcePool', () => {
 		await pool.drain();
 	});
 
+	it('serves large contended batches across compaction boundaries', async () => {
+		let created = 0;
+		const pool = new ResourcePool({
+			maxSize: 1,
+			create: () => ({ id: ++created }),
+			destroy: () => {}
+		});
+		const first = await pool.acquire();
+		const queued = Array.from({ length: 200 }, async () => {
+			const lease = await pool.acquire();
+			const id = lease.value.id;
+
+			await lease.release();
+
+			return id;
+		});
+
+		expect(pool.pending).toBe(200);
+		await first.release();
+		await expect(Promise.all(queued)).resolves.toEqual(Array.from({ length: 200 }, () => 1));
+
+		expect(created).toBe(1);
+		expect(pool.pending).toBe(0);
+		await pool.drain();
+	});
+
 	it('warms to minimum size and destroys invalid resources', async () => {
 		let created = 0;
 		const destroyed: number[] = [];

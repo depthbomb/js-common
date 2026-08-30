@@ -37,6 +37,9 @@ export class Channel<T> implements AsyncIterable<T> {
 	readonly #values: T[] = [];
 	readonly #senders: Array<ISender<T>> = [];
 	readonly #receivers: Array<IReceiver<T>> = [];
+	#valueHead = 0;
+	#senderHead = 0;
+	#receiverHead = 0;
 	#closed = false;
 	#closeError: unknown;
 
@@ -51,9 +54,9 @@ export class Channel<T> implements AsyncIterable<T> {
 	}
 
 	public get capacity() { return this.#capacity; }
-	public get size() { return this.#values.length; }
-	public get pendingSends() { return this.#senders.length; }
-	public get pendingReceives() { return this.#receivers.length; }
+	public get size() { return this.#values.length - this.#valueHead; }
+	public get pendingSends() { return this.#senders.length - this.#senderHead; }
+	public get pendingReceives() { return this.#receivers.length - this.#receiverHead; }
 	public get closed() { return this.#closed; }
 
 	/** Send a value, waiting while a bounded channel is full. */
@@ -64,7 +67,7 @@ export class Channel<T> implements AsyncIterable<T> {
 			throw new ChannelClosedError();
 		}
 
-		const receiver = this.#receivers.shift();
+		const receiver = this.#dequeueReceiver();
 
 		if (receiver) {
 			receiver.cleanup();
@@ -73,7 +76,7 @@ export class Channel<T> implements AsyncIterable<T> {
 			return;
 		}
 
-		if (this.#values.length < this.#capacity) {
+		if (this.size < this.#capacity) {
 			this.#values.push(value);
 
 			return;
@@ -89,14 +92,14 @@ export class Channel<T> implements AsyncIterable<T> {
 	public async receive(options: IChannelOperationOptions = {}): Promise<IteratorResult<T>> {
 		this.#throwIfAborted(options.signal);
 
-		if (this.#values.length > 0) {
-			const value = this.#values.shift()!;
+		if (this.size > 0) {
+			const value = this.#dequeueValue()!;
 			this.#promoteSender();
 
 			return { done: false, value };
 		}
 
-		const sender = this.#senders.shift();
+		const sender = this.#dequeueSender();
 
 		if (sender) {
 			sender.cleanup();
@@ -126,12 +129,14 @@ export class Channel<T> implements AsyncIterable<T> {
 
 		const closeReason = error ?? new ChannelClosedError();
 
-		for (const sender of this.#senders.splice(0)) {
+		let sender: ISender<T> | undefined;
+
+		while ((sender = this.#dequeueSender())) {
 			sender.cleanup();
 			sender.reject(closeReason);
 		}
 
-		if (this.#values.length === 0) {
+		if (this.size === 0) {
 			this.#settleReceivers();
 		}
 	}
@@ -151,7 +156,7 @@ export class Channel<T> implements AsyncIterable<T> {
 		};
 
 		const onAbort = () => {
-			const index = this.#senders.indexOf(sender);
+			const index = this.#senders.indexOf(sender, this.#senderHead);
 
 			if (index >= 0) {
 				this.#senders.splice(index, 1);
@@ -173,7 +178,7 @@ export class Channel<T> implements AsyncIterable<T> {
 		};
 
 		const onAbort = () => {
-			const index = this.#receivers.indexOf(receiver);
+			const index = this.#receivers.indexOf(receiver, this.#receiverHead);
 
 			if (index >= 0) {
 				this.#receivers.splice(index, 1);
@@ -188,7 +193,7 @@ export class Channel<T> implements AsyncIterable<T> {
 	}
 
 	#promoteSender(): void {
-		const sender = this.#senders.shift();
+		const sender = this.#dequeueSender();
 
 		if (sender) {
 			sender.cleanup();
@@ -196,13 +201,15 @@ export class Channel<T> implements AsyncIterable<T> {
 			sender.resolve();
 		}
 
-		if (this.#closed && this.#values.length === 0) {
+		if (this.#closed && this.size === 0) {
 			this.#settleReceivers();
 		}
 	}
 
 	#settleReceivers(): void {
-		for (const receiver of this.#receivers.splice(0)) {
+		let receiver: IReceiver<T> | undefined;
+
+		while ((receiver = this.#dequeueReceiver())) {
 			receiver.cleanup();
 
 			if (this.#closeError !== undefined) {
@@ -210,6 +217,69 @@ export class Channel<T> implements AsyncIterable<T> {
 			} else {
 				receiver.resolve({ done: true, value: undefined });
 			}
+		}
+	}
+
+	#dequeueValue(): T | undefined {
+		if (this.#valueHead >= this.#values.length) {
+			return undefined;
+		}
+
+		const value = this.#values[this.#valueHead++];
+		this.#compactValues();
+
+		return value;
+	}
+
+	#dequeueSender(): ISender<T> | undefined {
+		if (this.#senderHead >= this.#senders.length) {
+			return undefined;
+		}
+
+		const sender = this.#senders[this.#senderHead++];
+		this.#compactSenders();
+
+		return sender;
+	}
+
+	#dequeueReceiver(): IReceiver<T> | undefined {
+		if (this.#receiverHead >= this.#receivers.length) {
+			return undefined;
+		}
+
+		const receiver = this.#receivers[this.#receiverHead++];
+		this.#compactReceivers();
+
+		return receiver;
+	}
+
+	#compactValues(): void {
+		if (this.#valueHead === this.#values.length) {
+			this.#values.length = 0;
+			this.#valueHead = 0;
+		} else if (this.#valueHead >= 64 && this.#valueHead * 2 >= this.#values.length) {
+			this.#values.splice(0, this.#valueHead);
+			this.#valueHead = 0;
+		}
+	}
+
+	#compactSenders(): void {
+		if (this.#senderHead === this.#senders.length) {
+			this.#senders.length = 0;
+			this.#senderHead = 0;
+		} else if (this.#senderHead >= 64 && this.#senderHead * 2 >= this.#senders.length) {
+			this.#senders.splice(0, this.#senderHead);
+			this.#senderHead = 0;
+		}
+	}
+
+	#compactReceivers(): void {
+		if (this.#receiverHead === this.#receivers.length) {
+			this.#receivers.length = 0;
+			this.#receiverHead = 0;
+		} else if (this.#receiverHead >= 64 && this.#receiverHead * 2 >= this.#receivers.length) {
+			this.#receivers.splice(0, this.#receiverHead);
+			this.#receiverHead = 0;
 		}
 	}
 

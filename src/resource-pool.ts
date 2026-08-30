@@ -63,6 +63,7 @@ export class ResourcePool<T> implements AsyncDisposable {
 	readonly #validate?: (resource: T) => Awaitable<boolean>;
 	readonly #idle: Array<IIdleResource<T>> = [];
 	readonly #waiters: Array<IResourceWaiter<T>> = [];
+	#waiterHead = 0;
 	#active = 0;
 	#total = 0;
 	#creating = 0;
@@ -99,7 +100,7 @@ export class ResourcePool<T> implements AsyncDisposable {
 	public get size() { return this.#total; }
 	public get active() { return this.#active; }
 	public get idle() { return this.#idle.length; }
-	public get pending() { return this.#waiters.length; }
+	public get pending() { return this.#waiters.length - this.#waiterHead; }
 	public get closed() { return this.#closed; }
 
 	/** Create idle resources until the configured minimum size is reached. */
@@ -195,7 +196,9 @@ export class ResourcePool<T> implements AsyncDisposable {
 			this.#resolveDrain = resolve;
 		});
 
-		for (const waiter of this.#waiters.splice(0)) {
+		let waiter: IResourceWaiter<T> | undefined;
+
+		while ((waiter = this.#dequeueWaiter())) {
 			waiter.cleanup();
 			waiter.reject(new ResourcePoolClosedError());
 		}
@@ -230,7 +233,7 @@ export class ResourcePool<T> implements AsyncDisposable {
 			}
 		};
 		const removeAndReject = (error: unknown) => {
-			const index = this.#waiters.indexOf(waiter);
+			const index = this.#waiters.indexOf(waiter, this.#waiterHead);
 
 			if (index >= 0) {
 				this.#waiters.splice(index, 1);
@@ -263,7 +266,7 @@ export class ResourcePool<T> implements AsyncDisposable {
 		this.#dispatching = true;
 
 		try {
-			while (this.#waiters.length > 0 && !this.#closed) {
+			while (this.pending > 0 && !this.#closed) {
 				let resource: IIdleResource<T> | undefined;
 
 				try {
@@ -281,7 +284,7 @@ export class ResourcePool<T> implements AsyncDisposable {
 					break;
 				}
 
-				const waiter = this.#waiters.shift();
+				const waiter = this.#dequeueWaiter();
 
 				if (!waiter) {
 					resource.idleSince = Date.now();
@@ -399,12 +402,30 @@ export class ResourcePool<T> implements AsyncDisposable {
 	}
 
 	#rejectNext(error: unknown): void {
-		const waiter = this.#waiters.shift();
+		const waiter = this.#dequeueWaiter();
 
 		if (waiter) {
 			waiter.cleanup();
 			waiter.reject(error);
 		}
+	}
+
+	#dequeueWaiter(): IResourceWaiter<T> | undefined {
+		if (this.#waiterHead >= this.#waiters.length) {
+			return undefined;
+		}
+
+		const waiter = this.#waiters[this.#waiterHead++];
+
+		if (this.#waiterHead === this.#waiters.length) {
+			this.#waiters.length = 0;
+			this.#waiterHead = 0;
+		} else if (this.#waiterHead >= 64 && this.#waiterHead * 2 >= this.#waiters.length) {
+			this.#waiters.splice(0, this.#waiterHead);
+			this.#waiterHead = 0;
+		}
+
+		return waiter;
 	}
 
 	#scheduleIdlePrune(): void {

@@ -633,3 +633,14 @@ String.empty(); // ''
 String.isEmpty(''); // true
 String.isEmpty('value'); // false
 ```
+
+## Performance benchmarks
+
+Run the repeatable cross-module benchmark suite after building the package:
+
+```sh
+yarn benchmark
+```
+
+Workload size, measured rounds, warmup rounds, and name filtering can be configured with
+`BENCH_SCALE`, `BENCH_ROUNDS`, `BENCH_WARMUPS`, and `BENCH_FILTER` respectively.

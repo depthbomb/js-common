@@ -44,6 +44,24 @@ describe('RateLimiter', () => {
 		expect(order).toEqual([2, 3]);
 	});
 
+	it('releases large queued batches across compaction boundaries', async () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(0);
+
+		const count = 200;
+		const limiter = new RateLimiter({ limit: 1, intervalMs: 60_000, burst: count });
+
+		await Promise.all(Array.from({ length: count }, () => limiter.acquire()));
+
+		const queued = Array.from({ length: count }, () => limiter.acquire());
+		expect(limiter.pending).toBe(count);
+
+		limiter.reset();
+		await expect(Promise.all(queued)).resolves.toHaveLength(count);
+		expect(limiter.pending).toBe(0);
+		limiter[Symbol.dispose]();
+	});
+
 	it('supports cancellation and queue bounds', async () => {
 		const limiter = new RateLimiter({ limit: 1, intervalMs: 10_000, burst: 1, queueLimit: 1 });
 		const controller = new AbortController();

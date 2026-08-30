@@ -35,6 +35,21 @@ describe('Channel', () => {
 		await expect(sent).resolves.toBeUndefined();
 	});
 
+	it('preserves order across internal queue compaction boundaries', async () => {
+		const channel = new Channel<number>();
+		const count = 1_000;
+
+		for (let value = 0; value < count; value++) {
+			await channel.send(value);
+		}
+
+		for (let value = 0; value < count; value++) {
+			await expect(channel.receive()).resolves.toEqual({ done: false, value });
+		}
+
+		expect(channel.size).toBe(0);
+	});
+
 	it('drains buffered values before completing async iteration', async () => {
 		const channel = new Channel<number>();
 
