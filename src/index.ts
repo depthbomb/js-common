@@ -6,6 +6,7 @@ export * from './collections';
 export * from './date';
 export * from './functional';
 export * from './guards';
+export * from './iterable';
 export * from './number';
 export * from './promise';
 export * from './random';

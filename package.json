@@ -21,6 +21,7 @@
 		"./extensions": "./dist/extensions.mjs",
 		"./functional": "./dist/functional.mjs",
 		"./guards": "./dist/guards.mjs",
+		"./iterable": "./dist/iterable.mjs",
 		"./number": "./dist/number.mjs",
 		"./promise": "./dist/promise.mjs",
 		"./random": "./dist/random.mjs",

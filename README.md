@@ -411,6 +411,21 @@ stack.push('third');
 console.log(stack.pop()); // 'third'
 ```
 
+### `iterable`
+
+Lazy iterable transformations and single-pass grouping helpers.
+
+```ts
+import { chunk, groupBy, partition, range, uniqueBy, windowed, zip } from '@depthbomb/common/iterable';
+
+const pages = [...chunk(range(10), 3)];
+const [even, odd] = partition(range(10), value => value % 2 === 0);
+const grouped = groupBy(users, user => user.role);
+const unique = [...uniqueBy(users, user => user.id)];
+const pairs = [...zip(['a', 'b'], [1, 2])];
+const windows = [...windowed([1, 2, 3, 4], 3)];
+```
+
 ### `number`
 
 Numeric helpers for clamping, range checks, rounding, and aggregation.
