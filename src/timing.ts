@@ -215,7 +215,7 @@ export function formatDuration(milliseconds: number, options: IFormatDurationOpt
 		throw new Error('precision must be an integer >= 1');
 	}
 
-	if (milliseconds === 0) {
+	if (milliseconds < 1) {
 		return '0 milliseconds';
 	}
 

@@ -17,6 +17,10 @@ import {
 } from '../dist/timing.mjs';
 
 describe('async utilities', () => {
+	it.each([0, 0.1, 0.5, 0.999])('formats sub-millisecond duration %s as zero', (value) => {
+		expect(formatDuration(value)).toBe('0 milliseconds');
+	});
+
 	it('enforces the polling deadline during a pending condition and ignores late completion', async () => {
 		vi.useFakeTimers();
 
