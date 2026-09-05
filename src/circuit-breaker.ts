@@ -57,6 +57,8 @@ export class CircuitBreaker {
 	#successes = 0;
 	#failures = 0;
 	#rejected = 0;
+	#generation = 0;
+	#metricsGeneration = 0;
 
 	public constructor(options: ICircuitBreakerOptions = {}) {
 		this.#failureThreshold = options.failureThreshold ?? 5;
@@ -98,32 +100,39 @@ export class CircuitBreaker {
 			return this.#rejectOrFallback(options);
 		}
 
-		if (this.#state === CircuitState.HalfOpen) {
+		const probe = this.#state === CircuitState.HalfOpen;
+		if (probe) {
 			this.#halfOpenProbe = true;
 		}
 
+		const generation        = this.#generation;
+		const metricsGeneration = this.#metricsGeneration;
 		this.#executions++;
 
 		try {
 			const result = await operation();
-			this.#recordSuccess();
+			this.#recordSuccess(generation, metricsGeneration);
 
 			return result;
 		} catch (error) {
 			if (this.#isFailure(error)) {
-				this.#recordFailure();
+				this.#recordFailure(generation, metricsGeneration);
 			} else {
-				this.#recordSuccess();
+				this.#recordSuccess(generation, metricsGeneration);
 			}
 
 			throw error;
 		} finally {
-			this.#halfOpenProbe = false;
+			if (probe && generation === this.#generation) {
+				this.#halfOpenProbe = false;
+			}
 		}
 	}
 
 	/** Manually open the circuit and start its recovery delay. */
 	public open(): void {
+		this.#generation++;
+		this.#halfOpenProbe = false;
 		this.#openedAt = Date.now();
 		this.#halfOpenSuccesses = 0;
 		this.#transition(CircuitState.Open);
@@ -131,6 +140,7 @@ export class CircuitBreaker {
 
 	/** Manually close the circuit and clear its current failure streak. */
 	public close(): void {
+		this.#generation++;
 		this.#consecutiveFailures = 0;
 		this.#halfOpenSuccesses = 0;
 		this.#halfOpenProbe = false;
@@ -140,6 +150,7 @@ export class CircuitBreaker {
 
 	/** Close the circuit and reset all operational counters. */
 	public reset(): void {
+		this.#metricsGeneration++;
 		this.close();
 		this.#executions = 0;
 		this.#successes = 0;
@@ -163,13 +174,22 @@ export class CircuitBreaker {
 			this.#openedAt !== undefined &&
 			Date.now() - this.#openedAt >= this.#resetAfterMs
 		) {
+			this.#generation++;
 			this.#halfOpenSuccesses = 0;
 			this.#transition(CircuitState.HalfOpen);
 		}
 	}
 
-	#recordSuccess(): void {
+	#recordSuccess(generation: number, metricsGeneration: number): void {
+		if (metricsGeneration !== this.#metricsGeneration) {
+			return;
+		}
+
 		this.#successes++;
+
+		if (generation !== this.#generation) {
+			return;
+		}
 
 		if (this.#state === CircuitState.HalfOpen) {
 			this.#halfOpenSuccesses++;
@@ -184,8 +204,16 @@ export class CircuitBreaker {
 		this.#consecutiveFailures = 0;
 	}
 
-	#recordFailure(): void {
+	#recordFailure(generation: number, metricsGeneration: number): void {
+		if (metricsGeneration !== this.#metricsGeneration) {
+			return;
+		}
+
 		this.#failures++;
+
+		if (generation !== this.#generation) {
+			return;
+		}
 
 		if (this.#state === CircuitState.HalfOpen) {
 			this.open();

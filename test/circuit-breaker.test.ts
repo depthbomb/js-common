@@ -7,6 +7,51 @@ afterEach(() => {
 });
 
 describe('CircuitBreaker', () => {
+	it.each([false, true])('ignores stale request state changes during recovery (fails: %s)', async (fails) => {
+		const old = deferred<string>();
+		const probe = deferred<string>();
+		const breaker = new CircuitBreaker({
+			failureThreshold: 1,
+			successThreshold:  2,
+			resetAfterMs:      0
+		});
+		const oldCall = breaker.execute(() => old.promise);
+		const oldResult = fails ? expect(oldCall).rejects.toBe('stale') : expect(oldCall).resolves.toBe('stale');
+		breaker.open();
+		const probeCall = breaker.execute(() => probe.promise);
+
+		if (fails) {
+			old.reject('stale');
+		} else {
+			old.resolve('stale');
+		}
+
+		await oldResult;
+		expect(breaker.snapshot.halfOpenSuccesses).toBe(0);
+		await expect(breaker.execute(() => 'extra')).rejects.toBeInstanceOf(CircuitOpenError);
+		probe.resolve('healthy');
+		await probeCall;
+		expect(breaker.state).toBe(CircuitState.HalfOpen);
+		await breaker.execute(() => 'healthy again');
+		expect(breaker.state).toBe(CircuitState.Closed);
+	});
+
+	it('does not let an old execution overwrite reset metrics or state', async () => {
+		const old = deferred<void>();
+		const breaker = new CircuitBreaker({
+			failureThreshold: 1
+		});
+		const call = expect(breaker.execute(() => old.promise)).rejects.toBe('old failure');
+		breaker.reset();
+		old.reject('old failure');
+		await call;
+		expect(breaker.snapshot).toMatchObject({
+			state:      CircuitState.Closed,
+			executions: 0,
+			failures:   0
+		});
+	});
+
 	it('opens after the failure threshold and closes after a recovery probe', async () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(1_000);
