@@ -7,6 +7,47 @@ afterEach(() => {
 });
 
 describe('ResourcePool', () => {
+	it('settles every queued caller when resource creation repeatedly fails', async () => {
+		const error = new Error('create failed');
+		const create = vi.fn(() => {
+			throw error;
+		});
+		const pool = new ResourcePool({
+			maxSize: 1,
+			create,
+			destroy: () => {}
+		});
+		const requests = Array.from({
+			length: 5
+		}, () => pool.acquire());
+		const results = await Promise.allSettled(requests);
+		expect(results).toEqual(requests.map(() => ({
+			status: 'rejected',
+			reason: error
+		})));
+		expect(create).toHaveBeenCalledTimes(5);
+		expect(pool.pending).toBe(0);
+		await pool.drain();
+	});
+
+	it('continues queued acquisitions after invalidation cleanup fails', async () => {
+		const error = new Error('destroy failed');
+		const destroy = vi.fn().mockRejectedValueOnce(error).mockResolvedValue(undefined);
+		const pool = new ResourcePool({
+			maxSize: 1,
+			create:  () => ({}),
+			destroy
+		});
+		const first = await pool.acquire();
+		const waiting = pool.acquire();
+		await new Promise<void>(resolve => setTimeout(resolve, 0));
+		await expect(first.invalidate()).rejects.toBe(error);
+		const replacement = await waiting;
+		expect(replacement.value).not.toBe(first.value);
+		await replacement.release();
+		await pool.drain();
+	});
+
 	it.each([false, true])('drains resources undergoing validation (destroy fails: %s)', async (fails) => {
 		const started = deferred<void>();
 		const validated = deferred<boolean>();

@@ -127,6 +127,7 @@ export class ResourcePool<T> implements AsyncDisposable {
 			} finally {
 				this.#creating--;
 				this.#checkDrained();
+				void this.#dispatch();
 			}
 		}
 
@@ -178,10 +179,12 @@ export class ResourcePool<T> implements AsyncDisposable {
 			}
 		}
 
-		await Promise.all(expired.map(resource => this.#destroyResource(resource.value)));
-
-		this.#scheduleIdlePrune();
-		void this.#dispatch();
+		try {
+			await Promise.all(expired.map(resource => this.#destroyResource(resource.value)));
+		} finally {
+			this.#scheduleIdlePrune();
+			void this.#dispatch();
+		}
 
 		return expired.length;
 	}
@@ -282,6 +285,10 @@ export class ResourcePool<T> implements AsyncDisposable {
 
 				if (resource === undefined && this.#total + this.#creating < this.#maxSize) {
 					resource = await this.#createForWaiter();
+
+					if (resource === undefined) {
+						continue;
+					}
 				}
 
 				if (resource === undefined) {
@@ -402,14 +409,19 @@ export class ResourcePool<T> implements AsyncDisposable {
 	async #releaseResource(resource: T, invalid: boolean): Promise<void> {
 		this.#active--;
 
-		if (invalid || this.#closed) {
-			await this.#destroyResource(resource);
-		} else {
-			this.#idle.push({ value: resource, idleSince: Date.now() });
+		try {
+			if (invalid || this.#closed) {
+				await this.#destroyResource(resource);
+			} else {
+				this.#idle.push({
+					value:     resource,
+					idleSince: Date.now()
+				});
+			}
+		} finally {
+			this.#checkDrained();
+			void this.#dispatch();
 		}
-
-		this.#checkDrained();
-		void this.#dispatch();
 	}
 
 	async #destroyResource(resource: T, counted = true): Promise<void> {
