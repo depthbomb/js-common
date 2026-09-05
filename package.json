@@ -38,7 +38,9 @@
 	"files": [
 		"dist"
 	],
-	"sideEffects": false,
+	"sideEffects": [
+		"./dist/extensions.mjs"
+	],
 	"publishConfig": {
 		"access": "public"
 	},
