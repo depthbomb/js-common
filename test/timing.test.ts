@@ -1,5 +1,6 @@
 import { it, vi, expect, describe, afterEach } from 'vitest';
 import { sequential, allSettledSuccessful } from '../dist/promise.mjs';
+import { deferred } from '../dist/atomic.mjs';
 import {
 	retry,
 	measure,
@@ -16,6 +17,38 @@ import {
 } from '../dist/timing.mjs';
 
 describe('async utilities', () => {
+	it('enforces the polling deadline during a pending condition and ignores late completion', async () => {
+		vi.useFakeTimers();
+
+		try {
+			const condition = deferred<boolean>();
+			const check = vi.fn(() => condition.promise);
+			const polling = expect(pollUntil(check, 1, 10)).rejects.toThrow('Timeout exceeded');
+			await vi.advanceTimersByTimeAsync(10);
+			await polling;
+			condition.resolve(false);
+			await vi.advanceTimersByTimeAsync(100);
+			expect(check).toHaveBeenCalledTimes(1);
+			expect(vi.getTimerCount()).toBe(0);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('bounds polling sleeps by the deadline and removes timers on success', async () => {
+		vi.useFakeTimers();
+
+		try {
+			const polling = expect(pollUntil(() => false, 1_000, 10)).rejects.toThrow('Timeout exceeded');
+			await vi.advanceTimersByTimeAsync(10);
+			await polling;
+			await pollUntil(() => true, 100, 100);
+			expect(vi.getTimerCount()).toBe(0);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it('measures sync and async operation results', async () => {
 		await expect(measure(() => 42)).resolves.toMatchObject({ result: 42 });
 		const measured = await measure(async () => {

@@ -536,13 +536,46 @@ export function rejectionTimeout(ms: number) {
  * @param timeoutMs The maximum time in milliseconds to wait before throwing an error
  */
 export async function pollUntil(condition: () => Awaitable<boolean>, interval = 100, timeoutMs = 5_000) {
-	const start = Date.now();
-	while (!(await condition())) {
-		if (Date.now() - start > timeoutMs) {
-			throw new Error('Timeout exceeded');
-		}
+	if (!Number.isFinite(interval) || interval < 0 || !Number.isFinite(timeoutMs) || timeoutMs < 0) {
+		throw new Error('interval and timeoutMs must be finite numbers >= 0');
+	}
 
-		await timeout(interval);
+	const deadline = performance.now() + timeoutMs;
+	let stopped = false;
+	let sleepTimer: ReturnType<typeof setTimeout> | undefined;
+	let deadlineTimer: ReturnType<typeof setTimeout> | undefined;
+	const expired = new Promise<never>((_, reject) => {
+		deadlineTimer = setTimeout(() => reject(new Error('Timeout exceeded')), timeoutMs);
+	});
+
+	async function poll(): Promise<void> {
+		while (!stopped) {
+			const ready = await condition();
+			if (stopped) {
+				return;
+			}
+
+			const remaining = deadline - performance.now();
+			if (remaining <= 0) {
+				throw new Error('Timeout exceeded');
+			}
+
+			if (ready) {
+				return;
+			}
+
+			await new Promise<void>((resolve) => {
+				sleepTimer = setTimeout(resolve, Math.min(interval, remaining));
+			});
+		}
+	}
+
+	try {
+		await Promise.race([poll(), expired]);
+	} finally {
+		stopped = true;
+		clearTimeout(sleepTimer);
+		clearTimeout(deadlineTimer);
 	}
 }
 
