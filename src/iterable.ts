@@ -72,20 +72,26 @@ export function* uniqueBy<T, K>(values: Iterable<T>, keySelector: (value: T, ind
 /** Lazily pair values until either input is exhausted. */
 export function* zip<T, U>(left: Iterable<T>, right: Iterable<U>): IterableIterator<[T, U]> {
 	const leftIterator = left[Symbol.iterator]();
-	const rightIterator = right[Symbol.iterator]();
+	let rightIterator: Iterator<U> | undefined;
 
-	while (true) {
-		const leftResult = leftIterator.next();
-		const rightResult = rightIterator.next();
+	try {
+		rightIterator = right[Symbol.iterator]();
 
-		if (leftResult.done || rightResult.done) {
-			leftIterator.return?.();
-			rightIterator.return?.();
+		while (true) {
+			const leftResult  = leftIterator.next();
+			const rightResult = rightIterator.next();
+			if (leftResult.done || rightResult.done) {
+				return;
+			}
 
-			return;
+			yield [leftResult.value, rightResult.value];
 		}
-
-		yield [leftResult.value, rightResult.value];
+	} finally {
+		try {
+			leftIterator.return?.();
+		} finally {
+			rightIterator?.return?.();
+		}
 	}
 }
 

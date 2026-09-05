@@ -2,6 +2,60 @@ import { it, expect, describe } from 'vitest';
 import { chunk, groupBy, partition, range, uniqueBy, windowed, zip } from '../dist/iterable.mjs';
 
 describe('iterable utilities', () => {
+	it.each([false, true])('closes both zipped sources on early exit (cleanup fails: %s)', (fails) => {
+		const closed = [] as string[];
+
+		function* source(name: string) {
+			try {
+				yield 1;
+				yield 2;
+			} finally {
+				closed.push(name);
+
+				if (fails && name === 'left') {
+					// oxlint-disable-next-line no-unsafe-finally -- Exercise a source whose cleanup throws.
+					throw new Error('cleanup failed');
+				}
+			}
+		}
+
+		const consume = () => {
+			for (const pair of zip(source('left'), source('right'))) {
+				expect(pair).toEqual([1, 1]);
+				break;
+			}
+		};
+
+		if (fails) {
+			expect(consume).toThrow('cleanup failed');
+		} else {
+			consume();
+		}
+
+		expect(closed).toEqual(['left', 'right']);
+	});
+
+	it('closes the other source when a zipped iterator throws', () => {
+		let closed = false;
+
+		function* left() {
+			try {
+				yield 1;
+				yield 2;
+			} finally {
+				closed = true;
+			}
+		}
+
+		function* right() {
+			yield 1;
+			throw new Error('source failed');
+		}
+
+		expect(() => [...zip(left(), right())]).toThrow('source failed');
+		expect(closed).toBe(true);
+	});
+
 	it('chunks values lazily', () => {
 		let consumed = 0;
 		const source = function* () {
