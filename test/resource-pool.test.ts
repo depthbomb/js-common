@@ -7,6 +7,86 @@ afterEach(() => {
 });
 
 describe('ResourcePool', () => {
+	it('creates up to capacity concurrently while assigning leases in request order', async () => {
+		const factories = Array.from({
+			length: 3
+		}, () => deferred<number>());
+		const allStarted = deferred<void>();
+		let created = 0;
+		const pool = new ResourcePool({
+			maxSize: 3,
+			create: () => {
+				const factory = factories[created++];
+				if (created === 3) {
+					allStarted.resolve();
+				}
+
+				return factory.promise;
+			},
+			destroy: () => {}
+		});
+		const order = [] as number[];
+		const requests = Array.from({
+			length: 4
+		}, (_, index) => pool.acquire().then(lease => {
+			order.push(index);
+
+			return lease;
+		}));
+		await allStarted.promise;
+		expect(created).toBe(3);
+		factories[2].resolve(3);
+		const first = await requests[0];
+		expect(first.value).toBe(3);
+		factories[1].resolve(2);
+		const second = await requests[1];
+		factories[0].resolve(1);
+		const third = await requests[2];
+		expect(pool.active).toBe(3);
+		expect(pool.pending).toBe(1);
+		await first.release();
+		const fourth = await requests[3];
+		expect(order).toEqual([0, 1, 2, 3]);
+		expect(created).toBe(3);
+		await Promise.all([second.release(), third.release(), fourth.release()]);
+		await pool.drain();
+	});
+
+	it('destroys all concurrent creations when drained after cancellation', async () => {
+		const factories = [deferred<number>(), deferred<number>()];
+		const allStarted = deferred<void>();
+		const destroyed = [] as number[];
+		let created = 0;
+		const pool = new ResourcePool({
+			maxSize: 2,
+			create: () => {
+				const factory = factories[created++];
+				if (created === 2) {
+					allStarted.resolve();
+				}
+
+				return factory.promise;
+			},
+			destroy: value => {
+				destroyed.push(value);
+			}
+		});
+		const controller = new AbortController();
+		const first = expect(pool.acquire({
+			signal: controller.signal
+		})).rejects.toBe('cancelled');
+		const second = expect(pool.acquire()).rejects.toBeInstanceOf(ResourcePoolClosedError);
+		await allStarted.promise;
+		controller.abort('cancelled');
+		const draining = pool.drain();
+		factories[1].resolve(2);
+		factories[0].resolve(1);
+		await Promise.all([first, second, draining]);
+		expect(destroyed.toSorted()).toEqual([1, 2]);
+		expect(pool.size).toBe(0);
+		expect(pool.active).toBe(0);
+	});
+
 	it('settles every queued caller when resource creation repeatedly fails', async () => {
 		const error = new Error('create failed');
 		const create = vi.fn(() => {

@@ -1,0 +1,76 @@
+{
+  "before": {
+    "scale": 50000,
+    "rounds": 7,
+    "warmups": 2,
+    "results": [
+      {
+        "name": "resource pool: sequential reuse",
+        "operations": 50000,
+        "medianMs": 100.301,
+        "operationsPerSecond": 498501,
+        "samplesMs": [
+          108.494,
+          100.665,
+          107.295,
+          100.301,
+          97.745,
+          97.825,
+          98.964
+        ]
+      },
+      {
+        "name": "resource pool: contended reuse",
+        "operations": 50000,
+        "medianMs": 201.623,
+        "operationsPerSecond": 247988,
+        "samplesMs": [
+          210.645,
+          205.06,
+          201.623,
+          181.457,
+          202.984,
+          185.566,
+          189.842
+        ]
+      }
+    ]
+  },
+  "after": {
+    "scale": 50000,
+    "rounds": 7,
+    "warmups": 2,
+    "results": [
+      {
+        "name": "resource pool: sequential reuse",
+        "operations": 50000,
+        "medianMs": 98.015,
+        "operationsPerSecond": 510127,
+        "samplesMs": [
+          103.457,
+          99.484,
+          108.341,
+          97.728,
+          98.015,
+          96.703,
+          97.18
+        ]
+      },
+      {
+        "name": "resource pool: contended reuse",
+        "operations": 50000,
+        "medianMs": 202.822,
+        "operationsPerSecond": 246521,
+        "samplesMs": [
+          207.087,
+          202.822,
+          194.377,
+          203.188,
+          188.485,
+          207.519,
+          189.766
+        ]
+      }
+    ]
+  }
+}

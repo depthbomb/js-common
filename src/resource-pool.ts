@@ -283,15 +283,12 @@ export class ResourcePool<T> implements AsyncDisposable {
 					continue;
 				}
 
-				if (resource === undefined && this.#total + this.#creating < this.#maxSize) {
-					resource = await this.#createForWaiter();
-
-					if (resource === undefined) {
+				if (resource === undefined) {
+					if (!this.#closed && this.#total + this.#creating < this.#maxSize && this.pending > this.#creating) {
+						void this.#createForWaiter();
 						continue;
 					}
-				}
 
-				if (resource === undefined) {
 					break;
 				}
 
@@ -325,7 +322,7 @@ export class ResourcePool<T> implements AsyncDisposable {
 		}
 	}
 
-	async #createForWaiter(): Promise<IIdleResource<T> | undefined> {
+	async #createForWaiter(): Promise<void> {
 		this.#creating++;
 
 		try {
@@ -334,18 +331,28 @@ export class ResourcePool<T> implements AsyncDisposable {
 			if (this.#closed) {
 				await this.#destroyResource(resource, false);
 
-				return undefined;
+				return;
 			}
 
 			this.#total++;
 
-			return { value: resource, idleSince: Date.now() };
+			const waiter = this.#dequeueWaiter();
+			if (waiter) {
+				waiter.cleanup();
+				this.#active++;
+				waiter.resolve(this.#createLease(resource));
+			} else {
+				this.#idle.push({
+					value:     resource,
+					idleSince: Date.now()
+				});
+			}
 		} catch (error) {
 			this.#rejectNext(error);
-
-			return undefined;
 		} finally {
 			this.#creating--;
+			this.#checkDrained();
+			void this.#dispatch();
 		}
 	}
 
