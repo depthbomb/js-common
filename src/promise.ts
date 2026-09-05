@@ -113,25 +113,49 @@ export async function pMap<T, U>(values: Iterable<T> | AsyncIterable<T>, mapper:
 	const pending = new Set<Promise<void>>();
 	const results = [] as U[];
 	let index = 0;
+	let failed = false;
+	let rejectFailure!: (error: unknown) => void;
+	const failure = new Promise<never>((_, reject) => {
+		rejectFailure = reject;
+	});
 
-	for await (const value of values) {
-		const currentIndex = index++;
-		const task = (async () => {
-			results[currentIndex] = await mapper(value, currentIndex);
-		})().finally(() => {
-			pending.delete(task);
-		});
+	async function consume(): Promise<U[]> {
+		try {
+			for await (const value of values) {
+				if (failed) {
+					break;
+				}
 
-		pending.add(task);
+				const currentIndex = index++;
+				const task = Promise.resolve().then(() => mapper(value, currentIndex)).then(result => {
+					results[currentIndex] = result;
+				}, error => {
+					failed = true;
+					rejectFailure(error);
+				}).finally(() => {
+					pending.delete(task);
+				});
+				pending.add(task);
 
-		if (pending.size >= concurrency) {
-			await Promise.race(pending);
+				if (pending.size >= concurrency) {
+					await Promise.race(pending);
+				}
+
+				if (failed) {
+					break;
+				}
+			}
+		} catch (error) {
+			failed = true;
+			throw error;
 		}
+
+		await Promise.all(pending);
+
+		return results;
 	}
 
-	await Promise.all(pending);
-
-	return results;
+	return await Promise.race([consume(), failure]);
 }
 
 /** Filter sync or async iterables with an async predicate and bounded concurrency. */

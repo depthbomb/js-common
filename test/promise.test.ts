@@ -1,8 +1,60 @@
 import { timeout } from '../dist/timing.mjs';
-import { it, expect, describe } from 'vitest';
+import { it, expect, describe, vi } from 'vitest';
+import { deferred } from '../dist/atomic.mjs';
 import { pMap, pool, pFilter, allSettledDetailed } from '../dist/promise.mjs';
 
 describe('promise utilities', () => {
+	it('preserves mapper failures while an async source is waiting', async () => {
+		const next = deferred<void>();
+		const error = new Error('mapper failed');
+		const mapper = vi.fn(() => {
+			throw error;
+		});
+		let closed = false;
+
+		async function* values() {
+			try {
+				yield 1;
+				await next.promise;
+				yield 2;
+			} finally {
+				closed = true;
+			}
+		}
+
+		await expect(pMap(values(), mapper)).rejects.toBe(error);
+		next.resolve();
+		await vi.waitFor(() => expect(closed).toBe(true));
+		expect(mapper).toHaveBeenCalledTimes(1);
+	});
+
+	it('observes subsequent task rejections after the first mapping failure', async () => {
+		const first = deferred<number>();
+		const second = deferred<number>();
+		const started = deferred<void>();
+		const mapped = pMap([1, 2], value => {
+			if (value === 1) {
+				return first.promise;
+			}
+
+			started.resolve();
+
+			return second.promise;
+		});
+		const rejected = expect(mapped).rejects.toBe('first');
+		await started.promise;
+		first.reject('first');
+		await rejected;
+		second.reject('second');
+		await timeout(0);
+	});
+
+	it('propagates predicate failures through pFilter', async () => {
+		await expect(pFilter([1, 2], () => {
+			throw undefined;
+		})).rejects.toBeUndefined();
+	});
+
 	it('allSettledDetailed returns full results and split values/errors', async () => {
 		const error = new Error('boom');
 		const result = await allSettledDetailed([
