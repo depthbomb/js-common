@@ -6,6 +6,55 @@ afterEach(() => {
 });
 
 describe('LRUCache', () => {
+	it('keeps expiry deadlines correct through replacement, deletion, and clear', () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(0);
+		const cache = new LRUCache<string, number>({
+			maxSize: 5
+		});
+		cache.set('permanent', 1);
+		cache.set('short', 2, {
+			ttlMs: 10
+		});
+		cache.set('long', 3, {
+			ttlMs: 100
+		});
+		cache.set('short', 4);
+		vi.setSystemTime(10);
+		expect(cache.size).toBe(3);
+		cache.delete('long');
+		cache.set('earlier', 5, {
+			ttlMs: 5
+		});
+		vi.setSystemTime(15);
+		expect(cache.size).toBe(2);
+		expect([...cache]).toEqual([['permanent', 1], ['short', 4]]);
+		cache.clear();
+		cache.set('new', 6, {
+			ttlMs: 1
+		});
+		vi.setSystemTime(16);
+		expect(cache.size).toBe(0);
+	});
+
+	it('retries expiration pruning after an eviction callback throws', () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(0);
+		const onEvict = vi.fn().mockImplementationOnce(() => {
+			throw new Error('callback failed');
+		});
+		const cache = new LRUCache<string, number>({
+			maxSize: 2,
+			ttlMs:   10,
+			onEvict
+		});
+		cache.set('a', 1).set('b', 2);
+		vi.setSystemTime(10);
+		expect(() => cache.size).toThrow('callback failed');
+		expect(cache.size).toBe(0);
+		expect(onEvict).toHaveBeenCalledTimes(2);
+	});
+
 	it('matches an ordered-map model through sustained churn and removals', () => {
 		const capacity = 17;
 		const cache = new LRUCache<number, number>({

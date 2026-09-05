@@ -37,6 +37,7 @@ export class LRUCache<K, V> implements Iterable<[K, V]> {
 	readonly #entries = new Map<K, ICacheEntry<K, V>>();
 	#oldest?: ICacheEntry<K, V>;
 	#newest?: ICacheEntry<K, V>;
+	#nextExpiry = Number.POSITIVE_INFINITY;
 
 	public constructor(options: ILRUCacheOptions<K, V>) {
 		this.#validateMaxSize(options.maxSize);
@@ -104,6 +105,7 @@ export class LRUCache<K, V> implements Iterable<[K, V]> {
 		} as ICacheEntry<K, V>;
 		this.#entries.set(key, entry);
 		this.#append(entry);
+		this.#nextExpiry = Math.min(this.#nextExpiry, entry.expiresAt);
 		this.#evictOverflow();
 
 		return this;
@@ -161,6 +163,7 @@ export class LRUCache<K, V> implements Iterable<[K, V]> {
 		this.#entries.clear();
 		this.#oldest = undefined;
 		this.#newest = undefined;
+		this.#nextExpiry = Number.POSITIVE_INFINITY;
 
 		for (const [key, entry] of entries) {
 			this.#notifyEviction(key, entry.value, CacheEvictionReason.Cleared);
@@ -170,13 +173,25 @@ export class LRUCache<K, V> implements Iterable<[K, V]> {
 	/** Remove every expired entry and return the number removed. */
 	public pruneExpired(): number {
 		const now = Date.now();
-		let removed = 0;
+		if (this.#nextExpiry > now) {
+			return 0;
+		}
 
-		for (const [key, entry] of this.#entries) {
-			if (entry.expiresAt <= now) {
-				this.#remove(key, entry, CacheEvictionReason.Expired);
-				removed++;
+		let removed = 0;
+		this.#nextExpiry = Number.POSITIVE_INFINITY;
+
+		try {
+			for (const [key, entry] of this.#entries) {
+				if (entry.expiresAt <= now) {
+					this.#remove(key, entry, CacheEvictionReason.Expired);
+					removed++;
+				} else {
+					this.#nextExpiry = Math.min(this.#nextExpiry, entry.expiresAt);
+				}
 			}
+		} catch (error) {
+			this.#nextExpiry = Number.NEGATIVE_INFINITY;
+			throw error;
 		}
 
 		return removed;
