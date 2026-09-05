@@ -6,6 +6,59 @@ afterEach(() => {
 });
 
 describe('LRUCache', () => {
+	it('matches an ordered-map model through sustained churn and removals', () => {
+		const capacity = 17;
+		const cache = new LRUCache<number, number>({
+			maxSize: capacity
+		});
+		const model = new Map<number, number>();
+		let seed = 12345;
+
+		for (let index = 0; index < 2000; index++) {
+			seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+			const key = seed % 31;
+			const operation = (seed >>> 8) % 10;
+			if (operation < 6) {
+				cache.set(key, index);
+				model.delete(key);
+				model.set(key, index);
+
+				if (model.size > capacity) {
+					model.delete(model.keys().next().value!);
+				}
+			} else if (operation < 8) {
+				expect(cache.get(key)).toBe(model.get(key));
+				const value = model.get(key);
+				if (value !== undefined) {
+					model.delete(key);
+					model.set(key, value);
+				}
+			} else if (operation === 8) {
+				expect(cache.delete(key)).toBe(model.delete(key));
+			} else {
+				cache.clear();
+				model.clear();
+			}
+
+			expect([...cache]).toEqual([...model]);
+		}
+	});
+
+	it('keeps recency consistent when replacement callbacks insert the same key', () => {
+		let reentered = false;
+		const cache = new LRUCache<string, number>({
+			maxSize: 2,
+			onEvict: (key, _value, reason) => {
+				if (reason === CacheEvictionReason.Replaced && !reentered) {
+					reentered = true;
+					cache.set(key, 10);
+				}
+			}
+		});
+		cache.set('a', 1).set('b', 2).set('a', 3).set('c', 4);
+		expect([...cache]).toEqual([['a', 3], ['c', 4]]);
+	});
+
 	it('evicts the least recently used entry at capacity', () => {
 		const cache = new LRUCache<string, number>({ maxSize: 2 });
 

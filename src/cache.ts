@@ -21,9 +21,12 @@ export interface ICacheEntryOptions {
 	ttlMs?: number;
 }
 
-interface ICacheEntry<V> {
-	value: V;
-	expiresAt: number;
+interface ICacheEntry<K, V> {
+	key:        K;
+	value:      V;
+	expiresAt:  number;
+	previous?:  ICacheEntry<K, V>;
+	next?:      ICacheEntry<K, V>;
 }
 
 /** A bounded least-recently-used cache with optional entry expiration. */
@@ -31,7 +34,9 @@ export class LRUCache<K, V> implements Iterable<[K, V]> {
 	readonly #maxSize: number;
 	readonly #ttlMs: number;
 	readonly #onEvict?: (key: K, value: V, reason: CacheEvictionReason) => void;
-	readonly #entries = new Map<K, ICacheEntry<V>>();
+	readonly #entries = new Map<K, ICacheEntry<K, V>>();
+	#oldest?: ICacheEntry<K, V>;
+	#newest?: ICacheEntry<K, V>;
 
 	public constructor(options: ILRUCacheOptions<K, V>) {
 		this.#validateMaxSize(options.maxSize);
@@ -59,8 +64,7 @@ export class LRUCache<K, V> implements Iterable<[K, V]> {
 			return undefined;
 		}
 
-		this.#entries.delete(key);
-		this.#entries.set(key, entry);
+		this.#touch(entry);
 
 		return entry.value;
 	}
@@ -83,14 +87,23 @@ export class LRUCache<K, V> implements Iterable<[K, V]> {
 		const previous = this.#entries.get(key);
 
 		if (previous) {
-			this.#entries.delete(key);
-			this.#notifyEviction(key, previous.value, CacheEvictionReason.Replaced);
+			this.#remove(key, previous, CacheEvictionReason.Replaced);
 		}
 
-		this.#entries.set(key, {
+		// A replacement callback may have inserted this key again.
+		const inserted = this.#entries.get(key);
+		if (inserted) {
+			this.#unlink(inserted);
+			this.#entries.delete(key);
+		}
+
+		const entry = {
+			key,
 			value,
 			expiresAt: ttlMs === Number.POSITIVE_INFINITY ? Number.POSITIVE_INFINITY : Date.now() + ttlMs
-		});
+		} as ICacheEntry<K, V>;
+		this.#entries.set(key, entry);
+		this.#append(entry);
 		this.#evictOverflow();
 
 		return this;
@@ -101,8 +114,7 @@ export class LRUCache<K, V> implements Iterable<[K, V]> {
 		const entry = this.#getLiveEntry(key);
 
 		if (entry) {
-			this.#entries.delete(key);
-			this.#entries.set(key, entry);
+			this.#touch(entry);
 
 			return entry.value;
 		}
@@ -119,8 +131,7 @@ export class LRUCache<K, V> implements Iterable<[K, V]> {
 		const entry = this.#getLiveEntry(key);
 
 		if (entry) {
-			this.#entries.delete(key);
-			this.#entries.set(key, entry);
+			this.#touch(entry);
 
 			return entry.value;
 		}
@@ -139,8 +150,7 @@ export class LRUCache<K, V> implements Iterable<[K, V]> {
 			return false;
 		}
 
-		this.#entries.delete(key);
-		this.#notifyEviction(key, entry.value, CacheEvictionReason.Deleted);
+		this.#remove(key, entry, CacheEvictionReason.Deleted);
 
 		return true;
 	}
@@ -149,6 +159,8 @@ export class LRUCache<K, V> implements Iterable<[K, V]> {
 		const entries = [...this.#entries];
 
 		this.#entries.clear();
+		this.#oldest = undefined;
+		this.#newest = undefined;
 
 		for (const [key, entry] of entries) {
 			this.#notifyEviction(key, entry.value, CacheEvictionReason.Cleared);
@@ -190,7 +202,7 @@ export class LRUCache<K, V> implements Iterable<[K, V]> {
 		}
 	}
 
-	#getLiveEntry(key: K): Maybe<ICacheEntry<V>> {
+	#getLiveEntry(key: K): Maybe<ICacheEntry<K, V>> {
 		const entry = this.#entries.get(key);
 
 		if (!entry) {
@@ -208,19 +220,60 @@ export class LRUCache<K, V> implements Iterable<[K, V]> {
 
 	#evictOverflow(): void {
 		while (this.#entries.size > this.#maxSize) {
-			const oldest = this.#entries.entries().next().value;
+			const oldest = this.#oldest;
 
 			if (!oldest) {
 				return;
 			}
 
-			const [key, entry] = oldest;
-			this.#remove(key, entry, CacheEvictionReason.Capacity);
+			this.#remove(oldest.key, oldest, CacheEvictionReason.Capacity);
 		}
 	}
 
-	#remove(key: K, entry: ICacheEntry<V>, reason: CacheEvictionReason): void {
+	#touch(entry: ICacheEntry<K, V>): void {
+		if (entry === this.#newest) {
+			return;
+		}
+
+		this.#entries.delete(entry.key);
+		this.#entries.set(entry.key, entry);
+		this.#unlink(entry);
+		this.#append(entry);
+	}
+
+	#append(entry: ICacheEntry<K, V>): void {
+		entry.previous = this.#newest;
+		entry.next = undefined;
+
+		if (this.#newest) {
+			this.#newest.next = entry;
+		} else {
+			this.#oldest = entry;
+		}
+
+		this.#newest = entry;
+	}
+
+	#unlink(entry: ICacheEntry<K, V>): void {
+		if (entry.previous) {
+			entry.previous.next = entry.next;
+		} else {
+			this.#oldest = entry.next;
+		}
+
+		if (entry.next) {
+			entry.next.previous = entry.previous;
+		} else {
+			this.#newest = entry.previous;
+		}
+
+		entry.previous = undefined;
+		entry.next = undefined;
+	}
+
+	#remove(key: K, entry: ICacheEntry<K, V>, reason: CacheEvictionReason): void {
 		this.#entries.delete(key);
+		this.#unlink(entry);
 		this.#notifyEviction(key, entry.value, reason);
 	}
 
