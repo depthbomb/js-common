@@ -103,6 +103,31 @@ describe('async utilities', () => {
 });
 
 describe('retry', () => {
+	it.each([false, true])('cancels immediately when aborted before backoff (classifier: %s)', async (duringClassifier) => {
+		vi.useFakeTimers();
+		const controller = new AbortController();
+		const operation = vi.fn(() => {
+			if (!duringClassifier) {
+				controller.abort();
+			}
+
+			throw new Error('attempt failed');
+		});
+		await expect(retry(operation, {
+			signal: controller.signal,
+			baseMs: 60_000,
+			shouldRetry: async () => {
+				controller.abort();
+
+				return true;
+			}
+		})).rejects.toMatchObject({
+			name: 'AbortError'
+		});
+		expect(operation).toHaveBeenCalledTimes(1);
+		expect(vi.getTimerCount()).toBe(0);
+	});
+
 	afterEach(() => {
 		vi.useRealTimers();
 		vi.restoreAllMocks();

@@ -717,8 +717,9 @@ function throwIfAborted(signal?: AbortSignal) {
 }
 
 async function waitFor(ms: number, signal?: AbortSignal) {
+	throwIfAborted(signal);
+
 	if (ms <= 0) {
-		throwIfAborted(signal);
 		return;
 	}
 
