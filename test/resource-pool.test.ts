@@ -1,6 +1,6 @@
-import { afterEach, it, expect, describe, vi } from 'vitest';
-import { ResourceAcquireTimeoutError, ResourcePool, ResourcePoolClosedError } from '../dist/resource-pool.mjs';
 import { deferred } from '../dist/atomic.mjs';
+import { it, vi, expect, describe, afterEach } from 'vitest';
+import { ResourcePool, ResourcePoolClosedError, ResourceAcquireTimeoutError } from '../dist/resource-pool.mjs';
 
 afterEach(() => {
 	vi.useRealTimers();

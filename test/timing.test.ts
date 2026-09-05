@@ -1,6 +1,6 @@
+import { deferred } from '../dist/atomic.mjs';
 import { it, vi, expect, describe, afterEach } from 'vitest';
 import { sequential, allSettledSuccessful } from '../dist/promise.mjs';
-import { deferred } from '../dist/atomic.mjs';
 import {
 	retry,
 	measure,

@@ -1,6 +1,6 @@
-import { afterEach, it, expect, describe, vi } from 'vitest';
-import { CircuitBreaker, CircuitOpenError, CircuitState } from '../dist/circuit-breaker.mjs';
 import { deferred } from '../dist/atomic.mjs';
+import { it, vi, expect, describe, afterEach } from 'vitest';
+import { CircuitState, CircuitBreaker, CircuitOpenError } from '../dist/circuit-breaker.mjs';
 
 afterEach(() => {
 	vi.useRealTimers();

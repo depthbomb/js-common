@@ -1,7 +1,7 @@
-import assert from 'node:assert/strict';
-import { setTimeout as delay } from 'node:timers/promises';
-import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
+import assert from 'node:assert/strict';
+import { pathToFileURL } from 'node:url';
+import { setTimeout as delay } from 'node:timers/promises';
 
 const dist = process.env.BENCH_DIST
 	? pathToFileURL(resolve(process.env.BENCH_DIST) + '/')

@@ -1,4 +1,4 @@
-import type { Awaitable, Maybe } from './typing';
+import type { Maybe, Awaitable } from './typing';
 
 /** Why an entry left an {@link LRUCache}. */
 export const enum CacheEvictionReason {

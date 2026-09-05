@@ -1,6 +1,6 @@
 import { timeout } from '../dist/timing.mjs';
-import { it, expect, describe, vi } from 'vitest';
 import { deferred } from '../dist/atomic.mjs';
+import { it, vi, expect, describe } from 'vitest';
 import { pMap, pool, pFilter, allSettledDetailed } from '../dist/promise.mjs';
 
 describe('promise utilities', () => {

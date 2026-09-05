@@ -1,8 +1,8 @@
 import '../dist/extensions.mjs';
-import { it, expect, describe } from 'vitest';
 import { Rolldown } from 'tsdown';
 import { resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
+import { it, expect, describe } from 'vitest';
 
 describe('String.empty', () => {
 	it('preserves extension initialization in a tree-shaken consumer bundle', async () => {

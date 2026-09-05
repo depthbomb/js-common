@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest';
-import { ok, err, isOk, mapOk, mapErr, unwrap, unwrapOr, tryCatch, tryCatchAsync } from '../dist/result.mjs';
+import { ok, err, isOk, mapOk, mapErr, unwrap, tryCatch, unwrapOr, tryCatchAsync } from '../dist/result.mjs';
 
 describe('types helpers', () => {
 	it('ok and err create Result values', () => {

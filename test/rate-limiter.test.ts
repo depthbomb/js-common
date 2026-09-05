@@ -1,5 +1,5 @@
-import { afterEach, it, expect, describe, vi } from 'vitest';
-import { RateLimiter, RateLimitQueueFullError, RateLimiterClearedError } from '../dist/rate-limiter.mjs';
+import { it, vi, expect, describe, afterEach } from 'vitest';
+import { RateLimiter, RateLimiterClearedError, RateLimitQueueFullError } from '../dist/rate-limiter.mjs';
 
 afterEach(() => {
 	vi.useRealTimers();

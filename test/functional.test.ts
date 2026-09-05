@@ -1,5 +1,5 @@
 import { it, vi, expect, describe } from 'vitest';
-import { pipe, tap, deprecate } from '../dist/functional.mjs';
+import { tap, pipe, deprecate } from '../dist/functional.mjs';
 
 describe('pipe', () => {
 	it('applies functions from left to right', () => {

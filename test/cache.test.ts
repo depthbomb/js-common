@@ -1,5 +1,5 @@
-import { afterEach, it, expect, describe, vi } from 'vitest';
-import { CacheEvictionReason, LRUCache } from '../dist/cache.mjs';
+import { it, vi, expect, describe, afterEach } from 'vitest';
+import { LRUCache, CacheEvictionReason } from '../dist/cache.mjs';
 
 afterEach(() => {
 	vi.useRealTimers();

@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest';
-import { chunk, groupBy, partition, range, uniqueBy, windowed, zip } from '../dist/iterable.mjs';
+import { zip, chunk, range, groupBy, uniqueBy, windowed, partition } from '../dist/iterable.mjs';
 
 describe('iterable utilities', () => {
 	it.each([false, true])('closes both zipped sources on early exit (cleanup fails: %s)', (fails) => {

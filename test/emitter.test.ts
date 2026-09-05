@@ -1,5 +1,5 @@
-import { it, expect, describe } from 'vitest';
 import { Emitter } from '../dist/emitter.mjs';
+import { it, expect, describe } from 'vitest';
 
 interface ITestEvents {
 	progress: { completed: number; total: number };
