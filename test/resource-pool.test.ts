@@ -6,6 +6,53 @@ afterEach(() => {
 });
 
 describe('ResourcePool', () => {
+	it.each([false, true])('reclaims capacity after validation fails (async: %s)', async (asynchronous) => {
+		const error = new Error('validation failed');
+		const destroy = vi.fn();
+		const pool = new ResourcePool({
+			maxSize: 1,
+			minSize: 1,
+			create:  () => ({}),
+			destroy,
+			validate: () => {
+				if (asynchronous) {
+					return Promise.reject(error);
+				}
+
+				throw error;
+			}
+		});
+		await pool.warm();
+		await expect(pool.acquire()).rejects.toBe(error);
+		expect(destroy).toHaveBeenCalledTimes(1);
+		expect(pool.size).toBe(0);
+		const replacement = await pool.acquire();
+		await replacement.release();
+		await pool.drain();
+	});
+
+	it('preserves validation and cleanup failures without leaking capacity', async () => {
+		const validationError = new Error('validation failed');
+		const destroyError = new Error('destroy failed');
+		const pool = new ResourcePool({
+			maxSize: 1,
+			minSize: 1,
+			create:  () => 1,
+			validate: () => {
+				throw validationError;
+			},
+			destroy: () => {
+				throw destroyError;
+			}
+		});
+		await pool.warm();
+		await expect(pool.acquire()).rejects.toMatchObject({
+			errors: [validationError, destroyError]
+		});
+		expect(pool.size).toBe(0);
+		await pool.drain();
+	});
+
 	it('reuses resources and grants leases in FIFO order', async () => {
 		let created = 0;
 		const pool = new ResourcePool({

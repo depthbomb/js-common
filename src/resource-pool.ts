@@ -336,7 +336,23 @@ export class ResourcePool<T> implements AsyncDisposable {
 		while (this.#idle.length > 0) {
 			const entry = this.#idle.pop()!;
 			const expired = Date.now() - entry.idleSince >= this.#idleTimeoutMs;
-			const valid = !expired && (this.#validate ? await this.#validate(entry.value) : true);
+			let valid = !expired;
+
+			try {
+				if (valid && this.#validate) {
+					valid = await this.#validate(entry.value);
+				}
+			} catch (error) {
+				try {
+					await this.#destroyResource(entry.value);
+				} catch (destroyError) {
+					throw new AggregateError([error, destroyError], 'Resource validation and destruction failed', {
+						cause: destroyError
+					});
+				}
+
+				throw error;
+			}
 
 			if (valid) {
 				return entry;
