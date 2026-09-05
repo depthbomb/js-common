@@ -74,6 +74,8 @@ export class ResourcePool<T> implements AsyncDisposable {
 	#idleTimer?: ReturnType<typeof setTimeout>;
 	#drainPromise?: Promise<void>;
 	#resolveDrain?: () => void;
+	#rejectDrain?: (error: unknown) => void;
+	readonly #drainErrors: unknown[] = [];
 
 	public constructor(options: IResourcePoolOptions<T>) {
 		this.#validateSize(options.maxSize, 'maxSize', 1);
@@ -192,9 +194,11 @@ export class ResourcePool<T> implements AsyncDisposable {
 
 		this.#closed = true;
 		this.#clearIdleTimer();
-		this.#drainPromise = new Promise<void>((resolve) => {
+		this.#drainPromise = new Promise<void>((resolve, reject) => {
 			this.#resolveDrain = resolve;
+			this.#rejectDrain = reject;
 		});
+		void this.#drainPromise.catch(() => undefined);
 
 		let waiter: IResourceWaiter<T> | undefined;
 
@@ -204,7 +208,7 @@ export class ResourcePool<T> implements AsyncDisposable {
 		}
 
 		const idle = this.#idle.splice(0);
-		await Promise.all(idle.map(resource => this.#destroyResource(resource.value)));
+		await Promise.allSettled(idle.map(resource => this.#destroyResource(resource.value)));
 		this.#checkDrained();
 
 		return await this.#drainPromise;
@@ -281,6 +285,12 @@ export class ResourcePool<T> implements AsyncDisposable {
 				}
 
 				if (resource === undefined) {
+					break;
+				}
+
+				if (this.#closed) {
+					// Destruction errors are retained by the drain promise.
+					await this.#destroyResource(resource.value).catch(() => undefined);
 					break;
 				}
 
@@ -411,6 +421,12 @@ export class ResourcePool<T> implements AsyncDisposable {
 
 		try {
 			await this.#destroy(resource);
+		} catch (error) {
+			if (this.#closed) {
+				this.#drainErrors.push(error);
+			}
+
+			throw error;
 		} finally {
 			this.#destroying--;
 			this.#checkDrained();
@@ -474,7 +490,11 @@ export class ResourcePool<T> implements AsyncDisposable {
 			this.#creating === 0 &&
 			this.#destroying === 0
 		) {
-			this.#resolveDrain?.();
+			if (this.#drainErrors.length > 0) {
+				this.#rejectDrain?.(new AggregateError(this.#drainErrors, 'Resource pool destruction failed'));
+			} else {
+				this.#resolveDrain?.();
+			}
 		}
 	}
 

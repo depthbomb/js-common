@@ -1,11 +1,49 @@
 import { afterEach, it, expect, describe, vi } from 'vitest';
 import { ResourceAcquireTimeoutError, ResourcePool, ResourcePoolClosedError } from '../dist/resource-pool.mjs';
+import { deferred } from '../dist/atomic.mjs';
 
 afterEach(() => {
 	vi.useRealTimers();
 });
 
 describe('ResourcePool', () => {
+	it.each([false, true])('drains resources undergoing validation (destroy fails: %s)', async (fails) => {
+		const started = deferred<void>();
+		const validated = deferred<boolean>();
+		const error = new Error('destroy failed');
+		const destroy = vi.fn(() => {
+			if (fails) {
+				throw error;
+			}
+		});
+		const pool = new ResourcePool({
+			maxSize: 1,
+			minSize: 1,
+			create:  () => 1,
+			destroy,
+			validate: () => {
+				started.resolve();
+
+				return validated.promise;
+			}
+		});
+		await pool.warm();
+		const acquiring = expect(pool.acquire()).rejects.toBeInstanceOf(ResourcePoolClosedError);
+		await started.promise;
+		const draining = pool.drain();
+		const drained = fails
+			? expect(draining).rejects.toMatchObject({
+				errors: [error]
+			})
+			: expect(draining).resolves.toBeUndefined();
+		validated.resolve(true);
+		await acquiring;
+		await drained;
+		expect(destroy).toHaveBeenCalledExactlyOnceWith(1);
+		expect(pool.size).toBe(0);
+		expect(pool.idle).toBe(0);
+	});
+
 	it.each([false, true])('reclaims capacity after validation fails (async: %s)', async (asynchronous) => {
 		const error = new Error('validation failed');
 		const destroy = vi.fn();
