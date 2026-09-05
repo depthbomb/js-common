@@ -83,11 +83,12 @@ export function isFunction(value: unknown): value is (...args: never[]) => unkno
 }
 
 /**
- * Returns `true` when `value` is a {@link PromiseConstructor|Promise}.
+ * Returns `true` when `value` is a promise-like object with a callable `then`.
+ * Use `Promise.resolve(value)` to normalize it before using `catch` or `finally`.
  *
  * @param value Value to check.
  */
-export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
+export function isPromise<T = unknown>(value: unknown): value is PromiseLike<T> {
 	return (
 		typeof value === 'object' &&
 		value !== null &&

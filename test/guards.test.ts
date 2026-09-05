@@ -1,4 +1,4 @@
-import { it, expect, describe } from 'vitest';
+import { it, expect, describe, expectTypeOf } from 'vitest';
 import {
 	is,
 	has,
@@ -26,6 +26,21 @@ import {
 } from '../dist/guards.mjs';
 
 describe('guards', () => {
+	it('narrows thenables only to the supported promise-like interface', async () => {
+		const value = {
+			then(resolve: (value: number) => void) {
+				resolve(42);
+			}
+		} as unknown;
+
+		if (isPromise<number>(value)) {
+			expectTypeOf(value).toEqualTypeOf<PromiseLike<number>>();
+			await expect(Promise.resolve(value)).resolves.toBe(42);
+		} else {
+			throw new Error('thenable was not recognized');
+		}
+	});
+
 	it('isInteger matches finite integers and is exposed through the namespace', () => {
 		expect(isInteger(3)).toBe(true);
 		expect(isInteger(3.5)).toBe(false);
