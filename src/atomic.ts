@@ -695,19 +695,19 @@ export function memoizeAsync<TArgs extends unknown[], TResult>(
  *
  * @param fn Async function to run once.
  */
-export function onceAsync<T extends AnyAwaitableFn>(fn: T): T {
+export function onceAsync<T extends AnyAwaitableFn>(fn: T): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>>> {
 	let promise: Maybe<Promise<Awaited<ReturnType<T>>>>;
 
-	return ((...args: Parameters<T>) => {
+	return (...args: Parameters<T>) => {
 		if (!promise) {
-			promise = Promise.resolve(fn(...args) as ReturnType<T>).catch((error) => {
+			promise = Promise.resolve().then<Awaited<ReturnType<T>>>(() => fn(...args) as Awaited<ReturnType<T>>).catch((error) => {
 				promise = undefined;
 				throw error;
 			});
 		}
 
 		return promise;
-	}) as T;
+	};
 }
 
 /**

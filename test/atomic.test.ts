@@ -1,4 +1,4 @@
-import { it, expect, describe } from 'vitest';
+import { it, expect, describe, expectTypeOf } from 'vitest';
 import {
 	lazy,
 	once,
@@ -513,6 +513,31 @@ describe('atomic.singleFlight', () => {
 });
 
 describe('atomic.onceAsync', () => {
+	it('returns a typed promise for synchronous factories and preserves arguments', async () => {
+		const init = onceAsync((value: number, label: string) => `${label}:${value}`);
+		expectTypeOf(init).parameters.toEqualTypeOf<[number, string]>();
+		expectTypeOf(init).returns.toEqualTypeOf<Promise<string>>();
+		const first = init(42, 'value');
+		expect(init(100, 'ignored')).toBe(first);
+		await expect(first).resolves.toBe('value:42');
+	});
+
+	it('turns synchronous throws into retryable promise rejections', async () => {
+		let calls = 0;
+		const init = onceAsync(() => {
+			calls++;
+
+			if (calls === 1) {
+				throw new Error('sync failure');
+			}
+
+			return 42;
+		});
+		await expect(init()).rejects.toThrow('sync failure');
+		await expect(init()).resolves.toBe(42);
+		expect(calls).toBe(2);
+	});
+
 	it('reuses the successful promise and retries after rejection', async () => {
 		let calls = 0;
 		const init = onceAsync(async () => {
