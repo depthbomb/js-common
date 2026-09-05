@@ -6,6 +6,30 @@ afterEach(() => {
 });
 
 describe('RateLimiter', () => {
+	it('supports fractional refill rates with a usable default bucket', async () => {
+		vi.useFakeTimers();
+		const limiter = new RateLimiter({
+			limit:      0.5,
+			intervalMs: 100
+		});
+		expect(limiter.burst).toBe(1);
+		await limiter.acquire();
+		const queued = limiter.acquire();
+		await vi.advanceTimersByTimeAsync(199);
+		expect(limiter.pending).toBe(1);
+		await vi.advanceTimersByTimeAsync(1);
+		await queued;
+		limiter[Symbol.dispose]();
+	});
+
+	it.each([0, 0.5, NaN, Infinity])('rejects impossible burst capacity %s', (burst) => {
+		expect(() => new RateLimiter({
+			limit:      1,
+			intervalMs: 100,
+			burst
+		})).toThrow('burst must be a finite number >= 1');
+	});
+
 	it('allows bursts and replenishes tokens continuously', async () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(0);

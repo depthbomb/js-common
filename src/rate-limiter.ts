@@ -52,10 +52,12 @@ export class RateLimiter implements Disposable {
 		this.#validatePositive(options.limit, 'limit');
 		this.#validatePositive(options.intervalMs, 'intervalMs');
 
-		const burst = options.burst ?? options.limit;
+		const burst      = options.burst ?? Math.max(1, options.limit);
 		const queueLimit = options.queueLimit ?? Number.POSITIVE_INFINITY;
 
-		this.#validatePositive(burst, 'burst');
+		if (!Number.isFinite(burst) || burst < 1) {
+			throw new Error('burst must be a finite number >= 1');
+		}
 
 		if ((!Number.isInteger(queueLimit) && queueLimit !== Number.POSITIVE_INFINITY) || queueLimit < 0) {
 			throw new Error('queueLimit must be an integer >= 0 or Infinity');
