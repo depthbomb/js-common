@@ -60,7 +60,7 @@
 		"test": "yarn dist && vitest --run"
 	},
 	"devDependencies": {
-		"@types/node": "^24.13.3",
+		"@types/node": "^26.2.0",
 		"oxlint": "^1.80.0",
 		"release-it": "^21.0.2",
 		"tsdown": "^0.23.0",
